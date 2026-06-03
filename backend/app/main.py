@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes.prescription import router as prescription_router
 from app.routes.reminder import router as reminder_router
+from app.routes.stock import router as stock_router
 
 app = FastAPI(
     title="MedLoop AI",
@@ -19,6 +20,7 @@ app.add_middleware(
 
 app.include_router(prescription_router)
 app.include_router(reminder_router)
+app.include_router(stock_router)
 
 @app.get("/")
 async def root():
