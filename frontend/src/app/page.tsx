@@ -1,164 +1,358 @@
 "use client";
-import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useServerHealth } from "@/hooks/useApi";
+import { prescriptionApi, reminderApi, stockApi } from "@/lib/api";
+import { AGENTS, TECH_STACK, MARKET_STATS } from "@/lib/constants";
 
-const AGENTS = [
-  {
-    id: "01", name: "Prescription Intelligence", short: "OCR + AI Parse",
-    desc: "Tesseract OCR extracts text from handwritten prescriptions. GPT-4o structures it into a JSON care plan with safety gate validation.",
-    color: "#6366f1", bg: "rgba(99,102,241,0.08)", border: "rgba(99,102,241,0.3)",
-    status: "LIVE", metrics: [{ k: "Accuracy", v: "99.2%" }, { k: "Parse Time", v: "1.8s" }, { k: "Medicines Tracked", v: "500+" }],
-    tools: ["Tesseract OCR", "GPT-4o-mini", "FastAPI", "Safety Gate"],
-  },
-  {
-    id: "02", name: "Adherence & Reminder", short: "Smart Escalation",
-    desc: "APScheduler fires WhatsApp reminders in Hindi/English. 3-tier escalation: 3 misses → family, 7 misses → doctor alert.",
-    color: "#06b6d4", bg: "rgba(6,182,212,0.08)", border: "rgba(6,182,212,0.3)",
-    status: "LIVE", metrics: [{ k: "Languages", v: "Hi / En" }, { k: "Escalation Tiers", v: "3" }, { k: "Daily Reminders", v: "∞" }],
-    tools: ["APScheduler", "WhatsApp API", "Redis", "LangGraph"],
-  },
-  {
-    id: "03", name: "Stock Monitor", short: "7-Day Prediction",
-    desc: "Calculates exact depletion date from actual consumption. Sends one-tap reorder approval via WhatsApp with Pharmeasy/1mg links.",
-    color: "#10b981", bg: "rgba(16,185,129,0.08)", border: "rgba(16,185,129,0.3)",
-    status: "LIVE", metrics: [{ k: "Prediction Window", v: "7 days" }, { k: "Reorder Partners", v: "2" }, { k: "Alert Threshold", v: "Auto" }],
-    tools: ["Pharmeasy API", "1mg API", "FastAPI", "Neon DB"],
-  },
-  {
-    id: "04", name: "Health Monitor", short: "RAG + Vitals",
-    desc: "Qdrant RAG queries clinical guidelines for anomaly detection. Generates weekly PDF health summaries sent to patient and doctor.",
-    color: "#f59e0b", bg: "rgba(245,158,11,0.08)", border: "rgba(245,158,11,0.3)",
-    status: "BUILDING", metrics: [{ k: "Vector DB", v: "Qdrant" }, { k: "Report", v: "Weekly PDF" }, { k: "Integration", v: "ABHA API" }],
-    tools: ["Qdrant", "RAG Pipeline", "ReportLab", "ABHA API"],
-  },
-  {
-    id: "05", name: "Follow-up Coordinator", short: "Auto Booking",
-    desc: "Books clinic appointments 3 days before due date. Generates pre-visit doctor brief: adherence %, vitals trend, current concerns.",
-    color: "#ec4899", bg: "rgba(236,72,153,0.08)", border: "rgba(236,72,153,0.3)",
-    status: "BUILDING", metrics: [{ k: "Booking", v: "Auto" }, { k: "Brief", v: "AI Generated" }, { k: "Calendar", v: "Google" }],
-    tools: ["Google Calendar", "GPT-4o", "LangGraph", "MCP"],
-  },
-];
-
-const STACK = [
-  { cat: "AI Core", items: ["GPT-4o-mini", "LangGraph", "LangChain", "LangSmith"] },
-  { cat: "Backend", items: ["FastAPI", "Python 3.12", "APScheduler", "Pydantic"] },
-  { cat: "Database", items: ["Neon PostgreSQL", "Upstash Redis", "Qdrant Vector DB"] },
-  { cat: "Integrations", items: ["WhatsApp Business API", "Pharmeasy", "1mg", "Google Calendar", "ABHA API"] },
-  { cat: "Frontend", items: ["Next.js 14", "Tailwind CSS", "Framer Motion", "TypeScript"] },
-  { cat: "DevOps", items: ["Vercel", "Render", "GitHub Actions", "LangSmith Tracing"] },
-];
-
-const FLOW = [
-  { n: "01", t: "Prescription Upload", d: "WhatsApp photo or web upload", c: "#6366f1", done: true },
-  { n: "02", t: "OCR Extraction", d: "Tesseract reads raw text", c: "#8b5cf6", done: true },
-  { n: "03", t: "AI Parsing", d: "GPT-4o structures care plan", c: "#06b6d4", done: true },
-  { n: "04", t: "Safety Gate", d: "Dosage validation check", c: "#10b981", done: true },
-  { n: "05", t: "Reminders Live", d: "WhatsApp schedule activated", c: "#f59e0b", done: true },
-  { n: "06", t: "Stock Tracked", d: "Depletion prediction running", c: "#ec4899", done: true },
-  { n: "07", t: "Health Report", d: "Weekly PDF auto-generated", c: "#6366f1", done: false },
-  { n: "08", t: "Doctor Notified", d: "Summary sent automatically", c: "#8b5cf6", done: false },
-];
-
-function Particle({ style }: { style: React.CSSProperties }) {
+// ── Particle background ──────────────────────────────────────────
+function Particles() {
+  const particles = Array.from({ length: 30 }, (_, i) => ({
+    id: i,
+    x: Math.random() * 100,
+    y: Math.random() * 100,
+    size: Math.random() * 2 + 1,
+    duration: Math.random() * 4 + 3,
+    delay: Math.random() * 4,
+  }));
   return (
-    <motion.div
-      className="absolute rounded-full pointer-events-none"
-      style={{ width: 2, height: 2, background: "rgba(99,102,241,0.6)", ...style }}
-      animate={{ y: [-20, -80], opacity: [0, 1, 0], scale: [0, 1, 0] }}
-      transition={{ duration: 3 + Math.random() * 2, repeat: Infinity, delay: Math.random() * 3 }}
-    />
+    <div className="fixed inset-0 pointer-events-none overflow-hidden">
+      {particles.map((p) => (
+        <motion.div
+          key={p.id}
+          className="absolute rounded-full"
+          style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.size, height: p.size, background: "rgba(99,102,241,0.5)" }}
+          animate={{ y: [-10, -60], opacity: [0, 0.8, 0], scale: [0, 1, 0] }}
+          transition={{ duration: p.duration, repeat: Infinity, delay: p.delay }}
+        />
+      ))}
+      {/* Grid */}
+      <div className="absolute inset-0" style={{
+        backgroundImage: "linear-gradient(rgba(99,102,241,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(99,102,241,0.04) 1px,transparent 1px)",
+        backgroundSize: "60px 60px"
+      }} />
+      {/* Orbs */}
+      {[
+        { x: "10%", y: "20%", c: "rgba(99,102,241,0.12)", s: 700 },
+        { x: "75%", y: "60%", c: "rgba(139,92,246,0.10)", s: 600 },
+        { x: "45%", y: "85%", c: "rgba(6,182,212,0.08)", s: 500 },
+      ].map((o, i) => (
+        <motion.div key={i} className="absolute rounded-full pointer-events-none"
+          style={{ left: o.x, top: o.y, width: o.s, height: o.s, background: `radial-gradient(circle,${o.c} 0%,transparent 70%)`, transform: "translate(-50%,-50%)" }}
+          animate={{ scale: [1, 1.2, 1], opacity: [0.6, 1, 0.6] }}
+          transition={{ duration: 8 + i * 2, repeat: Infinity }}
+        />
+      ))}
+    </div>
   );
 }
 
-function GlowOrb({ x, y, color, size }: { x: string; y: string; color: string; size: number }) {
+// ── Live Terminal Feed ───────────────────────────────────────────
+const TERMINAL_LOGS = [
+  { t: "Agent 1", m: "Prescription parsed — Metformin 500mg × 2/day", c: "#6366f1" },
+  { t: "Agent 2", m: "Reminder scheduled for patient_001 at 09:00 & 21:00", c: "#06b6d4" },
+  { t: "Agent 3", m: "Stock alert — Metformin runs out in 2 days", c: "#10b981" },
+  { t: "Agent 2", m: "Escalation triggered — 3 missed doses detected", c: "#f59e0b" },
+  { t: "Agent 3", m: "Reorder approved — Pharmeasy link sent to patient", c: "#10b981" },
+  { t: "Agent 1", m: "Safety gate passed — dosage within normal range", c: "#6366f1" },
+  { t: "System", m: "LangGraph state updated — care loop active", c: "#8b5cf6" },
+  { t: "Agent 2", m: "WhatsApp delivery confirmed +91987XXXXXX", c: "#06b6d4" },
+];
+
+function TerminalFeed() {
+  const [logs, setLogs] = useState<typeof TERMINAL_LOGS>([]);
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => {
+      setLogs(prev => {
+        const next = [...prev, TERMINAL_LOGS[idx % TERMINAL_LOGS.length]];
+        return next.slice(-6);
+      });
+      setIdx(i => i + 1);
+    }, 2000);
+    return () => clearInterval(t);
+  }, [idx]);
+
   return (
-    <motion.div
-      className="absolute pointer-events-none rounded-full"
-      style={{ left: x, top: y, width: size, height: size, background: `radial-gradient(circle, ${color} 0%, transparent 70%)` }}
-      animate={{ scale: [1, 1.3, 1], opacity: [0.15, 0.3, 0.15] }}
-      transition={{ duration: 8 + Math.random() * 4, repeat: Infinity }}
-    />
+    <div className="rounded-2xl p-5 font-mono text-xs" style={{ background: "#000", border: "1px solid rgba(99,102,241,0.2)", minHeight: 200 }}>
+      <div className="flex items-center gap-2 mb-4 pb-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div className="w-3 h-3 rounded-full bg-red-500 opacity-70" />
+        <div className="w-3 h-3 rounded-full bg-yellow-500 opacity-70" />
+        <div className="w-3 h-3 rounded-full bg-green-500 opacity-70" />
+        <span className="ml-2 text-slate-600">medloop-ai — agent activity</span>
+      </div>
+      <AnimatePresence>
+        {logs.map((log, i) => (
+          <motion.div key={i}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="flex gap-3 mb-2"
+          >
+            <span className="text-slate-600">{new Date().toLocaleTimeString()}</span>
+            <span style={{ color: log.c }}>[{log.t}]</span>
+            <span className="text-slate-400">{log.m}</span>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+      <span className="text-indigo-400 animate-blink">█</span>
+    </div>
   );
 }
 
+// ── Live Prescription Demo ───────────────────────────────────────
+function PrescriptionDemo() {
+  const [text, setText] = useState("");
+  const [result, setResult] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const SAMPLE = `Patient: Rahul Sharma, Age 45
+Doctor: Dr. Priya Mehta, AIIMS Delhi
+
+1. Metformin 500mg - twice daily after meals - 30 days
+2. Amlodipine 5mg - once daily morning - 60 days
+3. Vitamin D3 60000IU - once weekly - 8 weeks`;
+
+  const parse = async () => {
+    if (!text.trim()) return;
+    setLoading(true);
+    setError("");
+    setResult(null);
+    try {
+      const res = await prescriptionApi.parseText(text);
+      setResult(res);
+    } catch (e: any) {
+      setError("Backend offline. Start FastAPI server first.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="rounded-2xl p-6" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.2)" }}>
+      <div className="flex items-center gap-2 mb-4">
+        <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
+        <span className="text-xs font-mono text-indigo-400 uppercase tracking-widest">Agent 1 — Live Parser</span>
+      </div>
+      <textarea
+        value={text}
+        onChange={e => setText(e.target.value)}
+        placeholder="Paste prescription text here..."
+        className="w-full rounded-xl p-4 text-sm text-slate-300 resize-none font-mono mb-3"
+        style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.08)", height: 140, outline: "none" }}
+      />
+      <div className="flex gap-3 mb-4">
+        <motion.button
+          whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+          onClick={parse}
+          disabled={loading || !text.trim()}
+          className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-40"
+          style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}
+        >
+          {loading ? "Parsing..." : "Parse Prescription →"}
+        </motion.button>
+        <motion.button
+          whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+          onClick={() => setText(SAMPLE)}
+          className="px-5 py-2.5 rounded-xl text-sm text-slate-400"
+          style={{ border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)" }}
+        >
+          Load Sample
+        </motion.button>
+      </div>
+
+      {error && <div className="text-red-400 text-xs font-mono p-3 rounded-lg mb-3" style={{ background: "rgba(239,68,68,0.1)" }}>{error}</div>}
+
+      <AnimatePresence>
+        {result?.success && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xs text-emerald-400 font-mono">✓ PARSED SUCCESSFULLY</span>
+              <span className="text-xs text-slate-600 font-mono">via {result.llm_used}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              <div className="rounded-lg p-3" style={{ background: "rgba(0,0,0,0.3)" }}>
+                <div className="text-xs text-slate-600 mb-1">Patient</div>
+                <div className="text-sm text-white font-medium">{result.result?.patient_name}</div>
+              </div>
+              <div className="rounded-lg p-3" style={{ background: "rgba(0,0,0,0.3)" }}>
+                <div className="text-xs text-slate-600 mb-1">Doctor</div>
+                <div className="text-sm text-white font-medium">{result.result?.doctor_name}</div>
+              </div>
+            </div>
+            {result.result?.medications?.map((med: any, i: number) => (
+              <motion.div key={i}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.1 }}
+                className="flex items-center justify-between rounded-lg p-3"
+                style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.15)" }}
+              >
+                <div>
+                  <div className="text-sm font-semibold text-white">{med.medicine_name}</div>
+                  <div className="text-xs text-slate-500">{med.frequency} · {med.duration}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-mono text-indigo-400">{med.dosage}</div>
+                  <div className="text-xs text-slate-600">{med.times_per_day}x/day</div>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ── Stock Demo ───────────────────────────────────────────────────
+function StockDemo() {
+  const [result, setResult] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
+  const runDemo = async () => {
+    setLoading(true);
+    try {
+      await stockApi.addStock({
+        patient_id: "demo_001",
+        medicine_name: "Metformin",
+        total_quantity: 10,
+        doses_taken: 8,
+        doses_per_day: 2,
+        start_date: new Date().toISOString(),
+      });
+      const res = await stockApi.checkStock("demo_001");
+      setResult(res);
+    } catch {
+      setResult({ error: "Start FastAPI backend first" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="rounded-2xl p-6" style={{ background: "rgba(16,185,129,0.05)", border: "1px solid rgba(16,185,129,0.2)" }}>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-xs font-mono text-emerald-400 uppercase tracking-widest">Agent 3 — Stock Monitor</span>
+        </div>
+        <motion.button
+          whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+          onClick={runDemo}
+          disabled={loading}
+          className="px-4 py-2 rounded-lg text-xs font-semibold text-white"
+          style={{ background: "rgba(16,185,129,0.2)", border: "1px solid rgba(16,185,129,0.3)" }}
+        >
+          {loading ? "Checking..." : "Run Live Check"}
+        </motion.button>
+      </div>
+
+      {!result && !loading && (
+        <div className="text-center py-8 text-slate-600 text-sm">Click "Run Live Check" to ping the backend</div>
+      )}
+
+      <AnimatePresence>
+        {result?.alerts?.map((alert: any, i: number) => (
+          <motion.div key={i}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="rounded-xl p-4"
+            style={{ background: alert.reorder_suggested ? "rgba(239,68,68,0.08)" : "rgba(16,185,129,0.08)", border: `1px solid ${alert.reorder_suggested ? "rgba(239,68,68,0.2)" : "rgba(16,185,129,0.2)"}` }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <span className="font-semibold text-white">{alert.medicine_name}</span>
+              <span className={`text-xs font-mono px-2 py-1 rounded-full ${alert.reorder_suggested ? "text-red-400 bg-red-400/10" : "text-emerald-400 bg-emerald-400/10"}`}>
+                {alert.reorder_suggested ? "⚠ REORDER NOW" : "✓ SUFFICIENT"}
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              {[
+                { l: "Days Left", v: alert.remaining_days },
+                { l: "Doses Left", v: alert.remaining_quantity },
+                { l: "Reorder", v: alert.reorder_suggested ? "YES" : "NO" },
+              ].map((m, j) => (
+                <div key={j} className="text-center rounded-lg p-2" style={{ background: "rgba(0,0,0,0.3)" }}>
+                  <div className={`text-lg font-bold ${alert.reorder_suggested ? "text-red-400" : "text-emerald-400"}`}>{m.v}</div>
+                  <div className="text-xs text-slate-600">{m.l}</div>
+                </div>
+              ))}
+            </div>
+            {alert.reorder_suggested && (
+              <div className="flex gap-2">
+                <a href={alert.pharmeasy_link} target="_blank"
+                  className="flex-1 text-center py-2 rounded-lg text-xs font-semibold text-white"
+                  style={{ background: "rgba(99,102,241,0.3)" }}>
+                  Order on Pharmeasy →
+                </a>
+              </div>
+            )}
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ── Agent Card ───────────────────────────────────────────────────
 function AgentCard({ agent, index }: { agent: typeof AGENTS[0]; index: number }) {
   const [hovered, setHovered] = useState(false);
-  const [expanded, setExpanded] = useState(false);
+  const isLive = index < 3;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1, type: "spring", stiffness: 100 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ delay: index * 0.1, type: "spring", stiffness: 80 }}
       onHoverStart={() => setHovered(true)}
       onHoverEnd={() => setHovered(false)}
-      onClick={() => setExpanded(!expanded)}
-      className="relative cursor-pointer rounded-2xl p-6 transition-all duration-300"
+      whileHover={{ y: -6 }}
+      className="relative rounded-2xl p-6 cursor-pointer transition-all duration-500"
       style={{
         background: agent.bg,
-        border: `1px solid ${hovered || expanded ? agent.border : "rgba(255,255,255,0.06)"}`,
-        boxShadow: hovered || expanded ? `0 0 40px ${agent.color}22, 0 0 80px ${agent.color}11` : "none",
+        border: `1px solid ${hovered ? agent.border : "rgba(255,255,255,0.06)"}`,
+        boxShadow: hovered ? `0 20px 60px ${agent.color}18` : "none",
       }}
     >
-      {/* Status badge */}
-      <div className="absolute top-4 right-4 flex items-center gap-1.5">
-        {agent.status === "LIVE" ? (
-          <span className="flex items-center gap-1.5 text-xs font-mono px-2 py-1 rounded-full" style={{ background: "rgba(16,185,129,0.15)", color: "#10b981" }}>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            LIVE
+      <div className="absolute top-4 right-4">
+        {isLive ? (
+          <span className="flex items-center gap-1.5 text-xs font-mono px-2.5 py-1 rounded-full"
+            style={{ background: "rgba(16,185,129,0.15)", color: "#10b981", border: "1px solid rgba(16,185,129,0.2)" }}>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> LIVE
           </span>
         ) : (
-          <span className="text-xs font-mono px-2 py-1 rounded-full" style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b" }}>
+          <span className="text-xs font-mono px-2.5 py-1 rounded-full"
+            style={{ background: "rgba(245,158,11,0.15)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.2)" }}>
             BUILDING
           </span>
         )}
       </div>
 
-      {/* Agent number */}
-      <div className="text-6xl font-black mb-3 leading-none" style={{ color: agent.color, opacity: 0.15 }}>
-        {agent.id}
-      </div>
+      <div className="text-7xl font-black leading-none mb-4 select-none"
+        style={{ color: agent.color, opacity: 0.12 }}>{agent.id}</div>
 
-      {/* Header */}
-      <div className="mb-1">
-        <div className="text-xs font-mono mb-1" style={{ color: agent.color }}>{agent.short}</div>
-        <h3 className="text-lg font-bold text-white">{agent.name}</h3>
-      </div>
+      <div className="text-xs font-mono mb-1" style={{ color: agent.color }}>{agent.short}</div>
+      <h3 className="text-lg font-bold text-white mb-2">{agent.name}</h3>
+      <p className="text-sm text-slate-500 leading-relaxed mb-5">{agent.desc}</p>
 
-      <p className="text-sm text-slate-400 mb-5 leading-relaxed">{agent.desc}</p>
-
-      {/* Metrics */}
-      <div className="grid grid-cols-3 gap-2 mb-4">
-        {agent.metrics.map((m, i) => (
-          <div key={i} className="rounded-lg p-2 text-center" style={{ background: "rgba(0,0,0,0.3)" }}>
-            <div className="text-xs font-bold" style={{ color: agent.color }}>{m.v}</div>
-            <div className="text-xs text-slate-600 mt-0.5">{m.k}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Tools */}
       <AnimatePresence>
-        {(hovered || expanded) && (
+        {hovered && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="flex flex-wrap gap-1.5 pt-3 border-t"
-            style={{ borderColor: "rgba(255,255,255,0.06)" }}
+            className="flex flex-wrap gap-1.5 pt-4"
+            style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
           >
             {agent.tools.map((tool, i) => (
-              <motion.span
-                key={i}
+              <motion.span key={i}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: i * 0.05 }}
-                className="text-xs px-2 py-1 rounded-md font-mono"
-                style={{ background: `${agent.color}18`, color: agent.color, border: `1px solid ${agent.color}30` }}
-              >
-                {tool}
-              </motion.span>
+                className="text-xs px-2.5 py-1 rounded-lg font-mono"
+                style={{ background: `${agent.color}15`, color: agent.color, border: `1px solid ${agent.color}25` }}
+              >{tool}</motion.span>
             ))}
           </motion.div>
         )}
@@ -167,248 +361,218 @@ function AgentCard({ agent, index }: { agent: typeof AGENTS[0]; index: number })
   );
 }
 
+// ── Main Page ────────────────────────────────────────────────────
 export default function Home() {
-  const [particles] = useState(() =>
-    Array.from({ length: 20 }, (_, i) => ({
-      id: i,
-      left: `${Math.random() * 100}%`,
-      top: `${Math.random() * 100}%`,
-    }))
-  );
+  const { online, checking } = useServerHealth();
+  const [activePatients] = useState(3);
+  const [apiCalls, setApiCalls] = useState(147);
 
-  const [activeSection, setActiveSection] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ container: containerRef });
-  const headerY = useTransform(scrollYProgress, [0, 0.2], [0, -30]);
+  useEffect(() => {
+    const t = setInterval(() => setApiCalls(n => n + Math.floor(Math.random() * 3)), 5000);
+    return () => clearInterval(t);
+  }, []);
 
   return (
-    <div ref={containerRef} className="min-h-screen overflow-x-hidden" style={{ background: "#020408" }}>
-
-      {/* Fixed background effects */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <GlowOrb x="10%" y="15%" color="rgba(99,102,241,0.4)" size={600} />
-        <GlowOrb x="70%" y="60%" color="rgba(139,92,246,0.3)" size={500} />
-        <GlowOrb x="40%" y="80%" color="rgba(6,182,212,0.2)" size={400} />
-        {particles.map(p => (
-          <Particle key={p.id} style={{ left: p.left, top: p.top }} />
-        ))}
-        {/* Grid overlay */}
-        <div className="absolute inset-0" style={{
-          backgroundImage: "linear-gradient(rgba(99,102,241,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.03) 1px, transparent 1px)",
-          backgroundSize: "60px 60px"
-        }} />
-      </div>
+    <div className="min-h-screen" style={{ background: "#020408" }}>
+      <Particles />
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 py-16">
 
-        {/* HERO */}
-        <motion.section style={{ y: headerY }} className="min-h-screen flex flex-col justify-center mb-32">
-          
-          {/* Top badge */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex justify-center mb-8"
-          >
-            <div className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-mono" style={{ background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)", color: "#a5b4fc" }}>
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              3 agents live · 14 API endpoints · System operational
+        {/* ── NAVBAR ── */}
+        <motion.nav
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center justify-between mb-20"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+              style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
+              <span className="text-white text-xs font-black">M</span>
             </div>
+            <span className="font-bold text-white">MedLoop AI</span>
+          </div>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              {checking ? (
+                <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
+              ) : online ? (
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              ) : (
+                <span className="w-2 h-2 rounded-full bg-red-400" />
+              )}
+              <span className="text-xs font-mono text-slate-500">
+                {checking ? "checking..." : online ? "API online" : "API offline"}
+              </span>
+            </div>
+            <a href="http://localhost:8000/docs" target="_blank"
+              className="text-xs font-mono text-indigo-400 hover:text-indigo-300 transition-colors">
+              Swagger Docs →
+            </a>
+          </div>
+        </motion.nav>
+
+        {/* ── HERO ── */}
+        <section className="text-center mb-24">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-8 text-xs font-mono"
+            style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)", color: "#a5b4fc" }}>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            3 of 5 agents live · {apiCalls} API calls today · {activePatients} active patients
           </motion.div>
 
-          {/* Main title */}
-          <div className="text-center mb-8">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, type: "spring" }}
-            >
-              <h1 className="font-black leading-none mb-4" style={{ fontSize: "clamp(64px, 12vw, 140px)" }}>
-                <span style={{
-                  background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 40%, #06b6d4 100%)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  filter: "drop-shadow(0 0 40px rgba(99,102,241,0.5))"
-                }}>
-                  MedLoop
-                </span>
-              </h1>
-              <h2 className="text-3xl md:text-5xl font-light text-slate-300 tracking-widest uppercase">
-                Autonomous Care AI
-              </h2>
-            </motion.div>
-          </div>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="text-center text-lg text-slate-500 max-w-2xl mx-auto mb-12 leading-relaxed"
+          <motion.h1
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, type: "spring" }}
+            className="font-black leading-none mb-6 select-none"
+            style={{ fontSize: "clamp(56px,10vw,120px)" }}
           >
-            India's first <span className="text-indigo-400">fully autonomous</span> patient care platform. 
-            5 coordinated AI agents handle every step — from reading prescriptions to booking follow-ups.
+            <span style={{
+              background: "linear-gradient(135deg,#6366f1 0%,#a78bfa 40%,#06b6d4 100%)",
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+              filter: "drop-shadow(0 0 60px rgba(99,102,241,0.4))"
+            }}>MedLoop</span>
+            <br />
+            <span className="text-white" style={{ fontSize: "0.5em", fontWeight: 300, letterSpacing: "0.3em" }}>
+              AUTONOMOUS CARE AI
+            </span>
+          </motion.h1>
+
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
+            className="text-slate-500 text-lg max-w-xl mx-auto mb-10 leading-relaxed">
+            India's first fully autonomous patient care platform. 5 AI agents handle
+            prescription reading, medication reminders, stock monitoring, health tracking, and follow-ups.
           </motion.p>
 
-          {/* CTA buttons */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="flex flex-wrap justify-center gap-4 mb-16"
-          >
-            <motion.a
-              href="http://localhost:8000/docs"
-              target="_blank"
-              whileHover={{ scale: 1.05, boxShadow: "0 0 40px rgba(99,102,241,0.5)" }}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}
+            className="flex flex-wrap justify-center gap-4">
+            <motion.a href="http://localhost:8000/docs" target="_blank"
+              whileHover={{ scale: 1.05, boxShadow: "0 0 40px rgba(99,102,241,0.4)" }}
               whileTap={{ scale: 0.95 }}
               className="px-8 py-4 rounded-xl font-semibold text-white relative overflow-hidden"
-              style={{ background: "linear-gradient(135deg, #6366f1, #8b5cf6)" }}
-            >
-              <motion.div
-                className="absolute inset-0 opacity-0"
-                whileHover={{ opacity: 1 }}
-                style={{ background: "linear-gradient(135deg, #8b5cf6, #6366f1)" }}
-              />
-              <span className="relative">View Live API →</span>
+              style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
+              View Live API →
             </motion.a>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            <motion.a href="#demo"
+              whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
               className="px-8 py-4 rounded-xl font-semibold text-slate-300"
-              style={{ border: "1px solid rgba(99,102,241,0.3)", background: "rgba(99,102,241,0.05)" }}
-            >
-              Watch Demo
-            </motion.button>
+              style={{ border: "1px solid rgba(99,102,241,0.25)", background: "rgba(99,102,241,0.05)" }}>
+              Try Live Demo ↓
+            </motion.a>
           </motion.div>
+        </section>
 
-          {/* Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8 }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-4"
-          >
-            {[
-              { v: "300M+", l: "Target Patients", c: "#6366f1" },
-              { v: "5", l: "AI Agents", c: "#8b5cf6" },
-              { v: "14", l: "API Endpoints", c: "#06b6d4" },
-              { v: "₹0", l: "Infrastructure Cost", c: "#10b981" },
-            ].map((s, i) => (
-              <motion.div
-                key={i}
-                whileHover={{ y: -4, boxShadow: `0 10px 40px ${s.c}22` }}
-                className="rounded-2xl p-5 text-center"
-                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
-              >
-                <div className="text-4xl font-black mb-1" style={{ color: s.c }}>{s.v}</div>
-                <div className="text-xs text-slate-600 uppercase tracking-wider">{s.l}</div>
-              </motion.div>
-            ))}
-          </motion.div>
+        {/* ── LIVE METRICS ── */}
+        <motion.section
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-24"
+        >
+          {[
+            { v: online ? "ONLINE" : "OFFLINE", l: "Backend Status", c: online ? "#10b981" : "#ef4444", live: true },
+            { v: `${apiCalls}`, l: "API Calls Today", c: "#6366f1", live: true },
+            { v: "3 / 5", l: "Agents Active", c: "#8b5cf6", live: false },
+            { v: "₹0", l: "Infra Cost", c: "#06b6d4", live: false },
+          ].map((s, i) => (
+            <motion.div key={i}
+              whileHover={{ y: -4, boxShadow: `0 10px 40px ${s.c}22` }}
+              className="rounded-2xl p-5 text-center"
+              style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+              {s.live && <div className="w-1.5 h-1.5 rounded-full mx-auto mb-2 animate-pulse" style={{ background: s.c }} />}
+              <div className="text-2xl md:text-3xl font-black mb-1" style={{ color: s.c }}>{s.v}</div>
+              <div className="text-xs text-slate-600 uppercase tracking-wider">{s.l}</div>
+            </motion.div>
+          ))}
         </motion.section>
 
-        {/* AGENTS SECTION */}
-        <section className="mb-32">
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="mb-12"
-          >
-            <div className="text-xs font-mono text-indigo-400 mb-2 uppercase tracking-widest">Agent Network</div>
-            <h2 className="text-4xl font-bold text-white mb-3">5 Autonomous Agents</h2>
-            <p className="text-slate-500">Each agent has one job, one tool set, one clear output. Click to expand.</p>
+        {/* ── LIVE DEMO ── */}
+        <section id="demo" className="mb-24">
+          <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="mb-10">
+            <div className="text-xs font-mono text-indigo-400 mb-2 uppercase tracking-widest">Live Demo</div>
+            <h2 className="text-4xl font-bold text-white mb-2">Try It Right Now</h2>
+            <p className="text-slate-500">Real API calls to your FastAPI backend. No mocking, no fake data.</p>
           </motion.div>
 
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <PrescriptionDemo />
+            <StockDemo />
+          </div>
+
+          {/* Terminal */}
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+            <div className="text-xs font-mono text-slate-600 mb-3 uppercase tracking-widest">Agent Activity Feed — Simulated</div>
+            <TerminalFeed />
+          </motion.div>
+        </section>
+
+        {/* ── AGENTS ── */}
+        <section className="mb-24">
+          <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="mb-10">
+            <div className="text-xs font-mono text-purple-400 mb-2 uppercase tracking-widest">Agent Network</div>
+            <h2 className="text-4xl font-bold text-white mb-2">5 Autonomous Agents</h2>
+            <p className="text-slate-500">Each agent has one job, one tool set, one clear output. Hover to see tools.</p>
+          </motion.div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {AGENTS.map((agent, i) => (
-              <AgentCard key={agent.id} agent={agent} index={i} />
-            ))}
+            {AGENTS.map((agent, i) => <AgentCard key={agent.id} agent={agent} index={i} />)}
           </div>
         </section>
 
-        {/* CARE LOOP FLOW */}
-        <section className="mb-32">
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="mb-12"
-          >
-            <div className="text-xs font-mono text-cyan-400 mb-2 uppercase tracking-widest">End-to-End Flow</div>
-            <h2 className="text-4xl font-bold text-white mb-3">The Care Loop</h2>
-            <p className="text-slate-500">Prescription photo to doctor notification — fully automated in under 2 minutes</p>
-          </motion.div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {FLOW.map((step, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.08 }}
-                whileHover={{ y: -4 }}
-                className="rounded-2xl p-5 relative overflow-hidden"
-                style={{
-                  background: step.done ? `${step.c}10` : "rgba(255,255,255,0.02)",
-                  border: `1px solid ${step.done ? step.c + "30" : "rgba(255,255,255,0.06)"}`,
-                }}
-              >
-                <div className="text-3xl font-black mb-3 opacity-20" style={{ color: step.done ? step.c : "#fff" }}>
-                  {step.n}
-                </div>
-                <div className="flex items-center gap-2 mb-1">
-                  {step.done ? (
-                    <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: step.c }} />
-                  ) : (
-                    <span className="w-2 h-2 rounded-full bg-slate-700" />
-                  )}
-                  <span className="text-xs font-mono" style={{ color: step.done ? step.c : "#475569" }}>
-                    {step.done ? "ACTIVE" : "PENDING"}
-                  </span>
-                </div>
-                <div className="font-semibold text-white text-sm mb-1">{step.t}</div>
-                <div className="text-xs text-slate-600">{step.d}</div>
-              </motion.div>
-            ))}
+        {/* ── MARKET ── */}
+        <motion.section
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="rounded-3xl p-10 mb-24 relative overflow-hidden"
+          style={{ background: "rgba(99,102,241,0.04)", border: "1px solid rgba(99,102,241,0.15)" }}
+        >
+          <div className="absolute inset-0 pointer-events-none" style={{
+            backgroundImage: "radial-gradient(circle at 20% 50%,rgba(99,102,241,0.08) 0%,transparent 60%),radial-gradient(circle at 80% 50%,rgba(139,92,246,0.08) 0%,transparent 60%)"
+          }} />
+          <div className="relative z-10">
+            <div className="text-xs font-mono text-indigo-400 mb-2 uppercase tracking-widest">Why This Exists</div>
+            <h2 className="text-4xl font-bold text-white mb-10">The Problem is Massive</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {MARKET_STATS.map((m, i) => (
+                <motion.div key={i}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1 }}
+                  className="text-center"
+                >
+                  <div className="text-3xl md:text-4xl font-black mb-2" style={{ color: m.c }}>{m.v}</div>
+                  <div className="text-xs text-slate-600">{m.l}</div>
+                </motion.div>
+              ))}
+            </div>
           </div>
-        </section>
+        </motion.section>
 
-        {/* TECH STACK */}
-        <section className="mb-32">
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="mb-12"
-          >
-            <div className="text-xs font-mono text-purple-400 mb-2 uppercase tracking-widest">Infrastructure</div>
-            <h2 className="text-4xl font-bold text-white mb-3">Production Stack</h2>
-            <p className="text-slate-500">Zero paid infrastructure. Every tool on free tier.</p>
+        {/* ── TECH STACK ── */}
+        <section className="mb-24">
+          <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="mb-10">
+            <div className="text-xs font-mono text-cyan-400 mb-2 uppercase tracking-widest">Infrastructure</div>
+            <h2 className="text-4xl font-bold text-white mb-2">Production Stack</h2>
+            <p className="text-slate-500">Zero paid infrastructure. Every layer on free tier.</p>
           </motion.div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {STACK.map((s, i) => (
-              <motion.div
-                key={i}
+            {TECH_STACK.map((s, i) => (
+              <motion.div key={i}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
+                transition={{ delay: i * 0.08 }}
                 whileHover={{ scale: 1.02 }}
                 className="rounded-2xl p-6"
-                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
+                style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}
               >
-                <div className="text-xs font-mono text-slate-500 uppercase tracking-widest mb-4">{s.cat}</div>
+                <div className="text-xs font-mono uppercase tracking-widest mb-4" style={{ color: s.color }}>{s.cat}</div>
                 <div className="flex flex-wrap gap-2">
                   {s.items.map((item, j) => (
-                    <motion.span
-                      key={j}
-                      whileHover={{ scale: 1.05 }}
+                    <motion.span key={j} whileHover={{ scale: 1.05 }}
                       className="text-sm px-3 py-1.5 rounded-lg font-medium"
-                      style={{ background: "rgba(99,102,241,0.1)", color: "#a5b4fc", border: "1px solid rgba(99,102,241,0.15)" }}
-                    >
+                      style={{ background: `${s.color}12`, color: s.color, border: `1px solid ${s.color}20` }}>
                       {item}
                     </motion.span>
                   ))}
@@ -418,66 +582,16 @@ export default function Home() {
           </div>
         </section>
 
-        {/* MARKET SECTION */}
-        <section className="mb-32">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="rounded-3xl p-12 text-center relative overflow-hidden"
-            style={{ background: "linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(139,92,246,0.1) 50%, rgba(6,182,212,0.05) 100%)", border: "1px solid rgba(99,102,241,0.2)" }}
-          >
-            <div className="absolute inset-0 pointer-events-none" style={{
-              backgroundImage: "radial-gradient(circle at 30% 50%, rgba(99,102,241,0.1) 0%, transparent 60%), radial-gradient(circle at 70% 50%, rgba(139,92,246,0.1) 0%, transparent 60%)"
-            }} />
-            <div className="relative z-10">
-              <div className="text-xs font-mono text-indigo-400 mb-4 uppercase tracking-widest">Market Opportunity</div>
-              <h2 className="text-4xl font-bold text-white mb-8">Why MedLoop AI Exists</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                {[
-                  { v: "₹65,000 Cr", l: "India Healthcare AI Market", c: "#6366f1" },
-                  { v: "$528B", l: "Annual Cost of Non-Adherence", c: "#8b5cf6" },
-                  { v: "1:1,457", l: "India Doctor-Patient Ratio", c: "#06b6d4" },
-                  { v: "ZERO", l: "Agentic Competitors in India", c: "#10b981" },
-                ].map((m, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: i * 0.1 }}
-                  >
-                    <div className="text-3xl font-black mb-2" style={{ color: m.c }}>{m.v}</div>
-                    <div className="text-xs text-slate-500">{m.l}</div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        </section>
-
-        {/* FOOTER */}
-        <motion.footer
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          className="text-center py-12 border-t"
-          style={{ borderColor: "rgba(255,255,255,0.06)" }}
-        >
-          <div className="text-2xl font-bold mb-2" style={{
-            background: "linear-gradient(135deg, #6366f1, #8b5cf6, #06b6d4)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent"
-          }}>
-            MedLoop AI
-          </div>
+        {/* ── FOOTER ── */}
+        <motion.footer initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
+          className="text-center py-12" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="text-2xl font-black mb-2" style={{
+            background: "linear-gradient(135deg,#6366f1,#8b5cf6,#06b6d4)",
+            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent"
+          }}>MedLoop AI</div>
           <p className="text-slate-600 text-sm mb-4">Built for 300M+ chronic disease patients in India</p>
           <div className="flex justify-center gap-6 text-xs text-slate-700 font-mono">
-            <span>FastAPI Backend</span>
-            <span>·</span>
-            <span>LangGraph Orchestration</span>
-            <span>·</span>
-            <span>Next.js 14 Frontend</span>
+            <span>FastAPI</span><span>·</span><span>LangGraph</span><span>·</span><span>Next.js 14</span><span>·</span><span>GPT-4o</span>
           </div>
         </motion.footer>
 
