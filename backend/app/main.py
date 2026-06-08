@@ -3,10 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routes.prescription import router as prescription_router
 from app.routes.reminder import router as reminder_router
 from app.routes.stock import router as stock_router
+from app.database.connection import init_db
+from app.config import settings
 
 app = FastAPI(
-    title="MedLoop AI",
-    version="1.0.0",
+    title=settings.APP_NAME,
+    version=settings.VERSION,
     description="India's first autonomous patient care agent system"
 )
 
@@ -18,6 +20,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.on_event("startup")
+async def startup():
+    await init_db()
+    print(f"🚀 {settings.APP_NAME} started successfully")
+
 app.include_router(prescription_router)
 app.include_router(reminder_router)
 app.include_router(stock_router)
@@ -25,8 +32,8 @@ app.include_router(stock_router)
 @app.get("/")
 async def root():
     return {
-        "app": "MedLoop AI",
-        "version": "1.0.0",
+        "app": settings.APP_NAME,
+        "version": settings.VERSION,
         "status": "running",
         "agents": ["prescription", "adherence", "stock", "health", "followup"]
     }
