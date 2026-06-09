@@ -15,6 +15,18 @@ export const healthApi = {
   ping: () => fetcher<{ status: string }>("/health"),
 };
 
+// ─── Auth ──────────────────────────────────────────────────────────
+export const authApi = {
+  signup: (data: any) =>
+    fetcher<any>("/api/v1/auth/signup", { method: "POST", body: JSON.stringify(data) }),
+  login: (data: any) =>
+    fetcher<any>("/api/v1/auth/login", { method: "POST", body: JSON.stringify(data) }),
+  me: (token: string) =>
+    fetch(`${API_BASE_URL}/api/v1/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).then((r) => r.json()),
+};
+
 // ─── Prescription Agent ────────────────────────────────────────────
 export const prescriptionApi = {
   parseText: (text: string) =>
