@@ -7,7 +7,7 @@ import re
 def get_async_url(url: str) -> str:
     url = re.sub(r'^postgresql://', 'postgresql+asyncpg://', url)
     url = re.sub(r'^postgres://', 'postgresql+asyncpg://', url)
-    url = re.sub(r'\?.*$', '', url)  # Remove ALL query params
+    url = re.sub(r'\?.*$', '', url)
     return url
 
 ASYNC_DATABASE_URL = get_async_url(settings.DATABASE_URL)
@@ -18,14 +18,24 @@ ssl_context.verify_mode = ssl.CERT_NONE
 
 engine = create_async_engine(
     ASYNC_DATABASE_URL,
-    echo=True,
-    connect_args={"ssl": ssl_context},
+    echo=False,
+    pool_size=2,
+    max_overflow=5,
+    pool_timeout=30,
+    pool_recycle=300,
+    pool_pre_ping=True,
+    connect_args={
+        "ssl": ssl_context,
+        "server_settings": {"jit": "off"},
+        "command_timeout": 30,
+    },
 )
 
 AsyncSessionLocal = async_sessionmaker(
     engine,
     class_=AsyncSession,
     expire_on_commit=False,
+    autoflush=False,
 )
 
 class Base(DeclarativeBase):
@@ -35,6 +45,10 @@ async def get_db():
     async with AsyncSessionLocal() as session:
         try:
             yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
         finally:
             await session.close()
 
