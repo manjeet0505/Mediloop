@@ -11,24 +11,21 @@ export function Particles() {
       s: Math.random() * 2 + 0.5,
       d: Math.random() * 5 + 4,
       delay: Math.random() * 5,
-      c: ["rgba(99,102,241,0.7)", "rgba(139,92,246,0.7)", "rgba(6,182,212,0.6)"][Math.floor(Math.random() * 3)],
     }))
   );
 
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden">
       {/* Grid */}
-      <div className="absolute inset-0" style={{
-        backgroundImage: "linear-gradient(rgba(99,102,241,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(99,102,241,0.05) 1px,transparent 1px)",
-        backgroundSize: "80px 80px",
-        maskImage: "radial-gradient(ellipse 90% 90% at 50% 50%,black 40%,transparent 100%)"
-      }} />
+      <div className="absolute inset-0 grid-bg"
+        style={{ maskImage: "radial-gradient(ellipse 90% 90% at 50% 50%,black 40%,transparent 100%)" }}
+      />
       {/* Orbs */}
       {[
-        { x: "5%", y: "10%", c: "rgba(99,102,241,0.18)", s: 800, d: 10 },
-        { x: "80%", y: "5%", c: "rgba(139,92,246,0.12)", s: 600, d: 14 },
-        { x: "70%", y: "70%", c: "rgba(6,182,212,0.10)", s: 700, d: 12 },
-        { x: "20%", y: "80%", c: "rgba(236,72,153,0.08)", s: 500, d: 16 },
+        { x: "5%", y: "10%", c: "var(--orb-primary)", s: 800, d: 10 },
+        { x: "80%", y: "5%", c: "var(--orb-secondary)", s: 600, d: 14 },
+        { x: "70%", y: "70%", c: "var(--orb-tertiary)", s: 700, d: 12 },
+        { x: "20%", y: "80%", c: "var(--orb-secondary)", s: 500, d: 16 },
       ].map((o, i) => (
         <motion.div key={i} className="absolute rounded-full pointer-events-none"
           style={{ left: o.x, top: o.y, width: o.s, height: o.s, background: `radial-gradient(circle,${o.c} 0%,transparent 70%)`, transform: "translate(-50%,-50%)", filter: "blur(40px)" }}
@@ -39,8 +36,8 @@ export function Particles() {
       {/* Floating particles */}
       {particles.map(p => (
         <motion.div key={p.id} className="absolute rounded-full"
-          style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.s, height: p.s, background: p.c }}
-          animate={{ y: [0, -80], opacity: [0, 0.9, 0], scale: [0, 1, 0] }}
+          style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.s, height: p.s, background: "var(--accent-primary)", opacity: 0.6 }}
+          animate={{ y: [0, -80], opacity: [0, 0.7, 0], scale: [0, 1, 0] }}
           transition={{ duration: p.d, repeat: Infinity, delay: p.delay }}
         />
       ))}

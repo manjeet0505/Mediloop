@@ -10,7 +10,7 @@ import { Particles } from "@/components/ui/Particles";
 
 export default function Home() {
   return (
-    <div className="min-h-screen" style={{ background: "#020408" }}>
+    <div className="min-h-screen" style={{ background: "var(--bg-page)" }}>
       <Particles />
       <Navbar />
       <div className="relative z-10 max-w-7xl mx-auto px-6">

@@ -24,7 +24,7 @@ export function Footer() {
     <footer className="relative mt-8">
       {/* Top glow line */}
       <div className="w-full h-px mb-16"
-        style={{ background: "linear-gradient(90deg,transparent,rgba(99,102,241,0.5),rgba(139,92,246,0.5),transparent)" }}
+        style={{ background: "linear-gradient(90deg,transparent,var(--accent-primary),var(--accent-secondary),transparent)" }}
       />
 
       <motion.div
@@ -41,11 +41,11 @@ export function Footer() {
             <div className="flex items-center gap-3 mb-5">
               <div className="relative">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-white"
-                  style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
+                  style={{ background: "var(--accent-gradient)" }}>
                   M
                 </div>
                 <motion.div className="absolute inset-0 rounded-xl -z-10"
-                  style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)", filter: "blur(12px)", opacity: 0.5 }}
+                  style={{ background: "var(--accent-gradient)", filter: "blur(12px)", opacity: 0.5 }}
                   animate={{ opacity: [0.3, 0.6, 0.3] }}
                   transition={{ duration: 3, repeat: Infinity }}
                 />

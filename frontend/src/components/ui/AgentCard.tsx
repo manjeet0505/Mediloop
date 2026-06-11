@@ -20,8 +20,8 @@ export function AgentCard({ agent, index }: { agent: Agent; index: number }) {
       whileHover={{ y: -8, transition: { type: "spring", stiffness: 400 } }}
       className="relative rounded-2xl p-6 cursor-pointer overflow-hidden"
       style={{
-        background: hovered ? agent.bg : "rgba(255,255,255,0.02)",
-        border: `1px solid ${hovered ? agent.border : "rgba(255,255,255,0.06)"}`,
+        background: hovered ? agent.bg : "var(--bg-overlay)",
+border: `1px solid ${hovered ? agent.border : "var(--border-subtle)"}`,
         boxShadow: hovered ? `0 20px 60px ${agent.color}15, 0 0 0 1px ${agent.color}20` : "none",
         transition: "background 0.4s, border 0.4s, box-shadow 0.4s",
       }}
@@ -43,20 +43,20 @@ export function AgentCard({ agent, index }: { agent: Agent; index: number }) {
           </div>
           {isLive ? (
             <span className="flex items-center gap-1.5 text-xs font-mono px-2.5 py-1 rounded-full"
-              style={{ background: "rgba(16,185,129,0.12)", color: "#10b981", border: "1px solid rgba(16,185,129,0.2)" }}>
+              style={{ background: "var(--success-bg)", color: "var(--success)", border: "1px solid var(--success)" }}>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />LIVE
             </span>
           ) : (
             <span className="text-xs font-mono px-2.5 py-1 rounded-full"
-              style={{ background: "rgba(245,158,11,0.12)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.2)" }}>
+              style={{ background: "var(--warning-bg)", color: "var(--warning)", border: "1px solid var(--warning)" }}>
               BUILDING
             </span>
           )}
         </div>
 
         <div className="text-xs font-mono mb-1.5" style={{ color: agent.color }}>{agent.short}</div>
-        <h3 className="text-base font-bold text-white mb-3 leading-snug">{agent.name}</h3>
-        <p className="text-sm text-slate-500 leading-relaxed mb-5">{agent.desc}</p>
+        <h3 className="text-base font-bold mb-3 leading-snug" style={{ color: "var(--text-primary)" }}>{agent.name}</h3>
+        <p className="text-sm leading-relaxed mb-5" style={{ color: "var(--text-secondary)" }}>{agent.desc}</p>
 
         <AnimatePresence>
           {hovered && (
