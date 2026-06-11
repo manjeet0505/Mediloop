@@ -51,22 +51,22 @@ export function Footer() {
                 />
               </div>
               <div>
-                <div className="font-bold text-white">MedLoop AI</div>
-                <div className="text-xs text-slate-600 font-mono">v1.0.0 · Beta</div>
+                <div className="font-bold" style={{ color: "var(--text-primary)" }}>MedLoop AI</div>
+<div className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>v1.0.0 · Beta</div>
               </div>
             </div>
-            <p className="text-xs text-slate-600 leading-relaxed mb-5">
+            <p className="text-xs leading-relaxed mb-5" style={{ color: "var(--text-muted)" }}>
               India's first autonomous patient care agent system. Built for 300M+ chronic disease patients.
             </p>
             {/* Status badge */}
             <div className="flex items-center gap-2 px-3 py-2 rounded-xl w-fit"
-              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+              style={{ background: "var(--bg-overlay)", border: "1px solid var(--border-subtle)" }}>
               <motion.div className="w-2 h-2 rounded-full"
-                style={{ background: online ? "#10b981" : "#ef4444" }}
+                style={{ background: online ? "var(--success)" : "var(--danger)" }}
                 animate={{ scale: [1, 1.4, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
               />
-              <span className="text-xs font-mono text-slate-600">
+              <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>
                 {online ? "All systems operational" : "Backend offline"}
               </span>
             </div>
@@ -75,14 +75,15 @@ export function Footer() {
           {/* Link cols */}
           {FOOTER_LINKS.map((col, i) => (
             <div key={i}>
-              <div className="text-xs font-mono text-slate-500 uppercase tracking-widest mb-5">
+              <div className="text-xs font-mono uppercase tracking-widest mb-5" style={{ color: "var(--text-muted)" }}>
                 {col.title}
               </div>
               <div className="space-y-3">
                 {col.links.map((link, j) => (
                   <motion.div key={j}
                     whileHover={{ x: 4 }}
-                    className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer transition-colors hover:text-slate-400">
+                    className="flex items-center gap-2 text-sm cursor-pointer transition-colors"
+style={{ color: "var(--text-muted)" }}>
                     <span className="w-1 h-1 rounded-full bg-slate-700 shrink-0" />
                     {link}
                   </motion.div>
@@ -94,18 +95,18 @@ export function Footer() {
 
         {/* Bottom bar */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 py-8"
-          style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+          style={{ borderTop: "1px solid var(--border-subtle)" }}>
           <div className="flex items-center gap-4 flex-wrap justify-center">
-            <span className="text-xs text-slate-700 font-mono">© 2026 MedLoop AI</span>
-            <span className="text-slate-800">·</span>
-            <span className="text-xs text-slate-700 font-mono">Built by Manjeet Kumar Mishra</span>
-            <span className="text-slate-800">·</span>
-            <span className="text-xs text-slate-700 font-mono">MDU, Rohtak · B.Tech CSE 2026</span>
+           <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>© 2026 MedLoop AI</span>
+            <span style={{ color: "var(--border-subtle)" }}>·</span>
+            <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>Built by Manjeet Kumar Mishra</span>
+            <span style={{ color: "var(--border-subtle)" }}>·</span>
+            <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>MDU, Rohtak · B.Tech CSE 2026</span>
           </div>
           <div className="flex items-center gap-2 flex-wrap justify-center">
             {["FastAPI", "LangGraph", "Next.js 14", "GPT-4o", "Qdrant"].map((t, i) => (
-              <span key={i} className="text-xs font-mono px-2.5 py-1 rounded-lg text-slate-700"
-                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
+              <span key={i} className="text-xs font-mono px-2.5 py-1 rounded-lg"
+style={{ background: "var(--bg-overlay)", border: "1px solid var(--border-subtle)", color: "var(--text-muted)" }}>
                 {t}
               </span>
             ))}

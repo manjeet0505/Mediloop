@@ -38,17 +38,17 @@ export function Terminal() {
 
   return (
     <div className="rounded-2xl overflow-hidden"
-      style={{ background: "#050810", border: "1px solid rgba(99,102,241,0.2)", boxShadow: "0 0 60px rgba(99,102,241,0.06)" }}>
+      style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", boxShadow: "var(--shadow-glow)" }}>
       {/* Title bar */}
       <div className="flex items-center justify-between px-4 py-3"
-        style={{ background: "rgba(99,102,241,0.06)", borderBottom: "1px solid rgba(99,102,241,0.12)" }}>
+       style={{ background: "var(--bg-overlay)", borderBottom: "1px solid var(--border-subtle)" }}>
         <div className="flex items-center gap-2">
           <div className="flex gap-1.5">
             <div className="w-3 h-3 rounded-full" style={{ background: "#ff5f57" }} />
             <div className="w-3 h-3 rounded-full" style={{ background: "#febc2e" }} />
             <div className="w-3 h-3 rounded-full" style={{ background: "#28c840" }} />
           </div>
-          <span className="text-xs font-mono text-slate-600 ml-2">medloop-ai — agent-activity-feed</span>
+          <span className="text-xs font-mono ml-2" style={{ color: "var(--text-muted)" }}>medloop-ai — agent-activity-feed</span>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -59,20 +59,20 @@ export function Terminal() {
       <div ref={ref} className="p-4 font-mono text-xs space-y-2.5 overflow-y-auto"
         style={{ minHeight: 220, maxHeight: 280 }}>
         {logs.length === 0 && (
-          <span className="text-slate-700">Initializing agent network...</span>
+          <span style={{ color: "var(--text-muted)" }}>Initializing agent network...</span>
         )}
         <AnimatePresence>
           {logs.map((log, i) => (
             <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
               className="flex gap-3 items-start">
-              <span className="text-slate-700 shrink-0">{log.time}</span>
+              <span className="shrink-0" style={{ color: "var(--text-muted)" }}>{log.time}</span>
               <span className="shrink-0 px-1.5 py-0.5 rounded text-xs font-bold"
                 style={{ background: `${log.c}20`, color: log.c }}>{log.agent}</span>
-              <span className="text-slate-400 leading-relaxed">{log.msg}</span>
+             <span className="leading-relaxed" style={{ color: "var(--text-secondary)" }}>{log.msg}</span>
             </motion.div>
           ))}
         </AnimatePresence>
-        <span className="text-indigo-400 animate-blink">█</span>
+        <span className="animate-blink" style={{ color: "var(--accent-primary)" }}>█</span>
       </div>
     </div>
   );
