@@ -30,7 +30,7 @@ export function StockDemo() {
 
   return (
     <div className="rounded-2xl p-6 h-full"
-      style={{ background: "rgba(16,185,129,0.04)", border: "1px solid rgba(16,185,129,0.15)" }}>
+      style={{ background: "var(--bg-overlay)", border: "1px solid var(--border-default)" }}>
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
@@ -38,14 +38,14 @@ export function StockDemo() {
             <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
             <GlowRing color="rgba(16,185,129,0.6)" size={20} />
           </div>
-          <span className="text-xs font-mono text-emerald-400 uppercase tracking-widest">
+          <span className="text-xs font-mono uppercase tracking-widest" style={{ color: "var(--success)" }}>
             Agent 3 — Stock Monitor
           </span>
         </div>
         <motion.button whileHover={{ scale: 1.05, boxShadow: "0 0 20px rgba(16,185,129,0.3)" }}
           whileTap={{ scale: 0.95 }} onClick={run} disabled={loading}
-          className="px-4 py-2 rounded-xl text-xs font-semibold text-emerald-300 disabled:opacity-40"
-          style={{ background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.25)" }}>
+          className="px-4 py-2 rounded-xl text-xs font-semibold disabled:opacity-40"
+style={{ background: "var(--success-bg)", border: "1px solid var(--success)", color: "var(--success)" }}>
           {loading ? "Checking..." : "Run Live Check"}
         </motion.button>
       </div>
@@ -54,10 +54,10 @@ export function StockDemo() {
       {!result && !loading && (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3"
-            style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.15)" }}>
+            style={{ background: "var(--success-bg)", border: "1px solid var(--success)" }}>
             <span className="text-xl">📦</span>
           </div>
-          <p className="text-sm text-slate-600">Click "Run Live Check" to ping backend</p>
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>Click "Run Live Check" to ping backend</p>
         </div>
       )}
 
@@ -67,13 +67,13 @@ export function StockDemo() {
           <motion.div key={i} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
             className="rounded-xl p-5"
             style={{
-              background: alert.reorder_suggested ? "rgba(239,68,68,0.06)" : "rgba(16,185,129,0.06)",
-              border: `1px solid ${alert.reorder_suggested ? "rgba(239,68,68,0.2)" : "rgba(16,185,129,0.2)"}`
+              background: alert.reorder_suggested ? "var(--danger-bg)" : "var(--success-bg)",
+border: `1px solid ${alert.reorder_suggested ? "var(--danger)" : "var(--success)"}`
             }}>
             <div className="flex items-center justify-between mb-4">
-              <span className="font-bold text-white">{alert.medicine_name}</span>
+              <span className="font-bold" style={{ color: "var(--text-primary)" }}>{alert.medicine_name}</span>
               <span className={`text-xs font-mono px-3 py-1 rounded-full font-bold ${alert.reorder_suggested ? "text-red-400" : "text-emerald-400"}`}
-                style={{ background: alert.reorder_suggested ? "rgba(239,68,68,0.12)" : "rgba(16,185,129,0.12)" }}>
+                style={{ background: alert.reorder_suggested ? "var(--danger-bg)" : "var(--success-bg)", color: alert.reorder_suggested ? "var(--danger)" : "var(--success)" }}>
                 {alert.reorder_suggested ? "⚠ CRITICAL" : "✓ OK"}
               </span>
             </div>
@@ -83,11 +83,11 @@ export function StockDemo() {
                 { l: "Doses Left", v: String(alert.remaining_quantity) },
                 { l: "Reorder", v: alert.reorder_suggested ? "YES" : "NO" }
               ].map((m, j) => (
-                <div key={j} className="rounded-xl p-3 text-center" style={{ background: "rgba(0,0,0,0.3)" }}>
+                <div key={j} className="rounded-xl p-3 text-center" style={{ background: "var(--bg-surface)" }}>
                   <div className={`text-xl font-black ${alert.reorder_suggested ? "text-red-400" : "text-emerald-400"}`}>
                     {m.v}
                   </div>
-                  <div className="text-xs text-slate-600 mt-0.5">{m.l}</div>
+                  <div className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{m.l}</div>
                 </div>
               ))}
             </div>
@@ -95,7 +95,7 @@ export function StockDemo() {
               <motion.a href={alert.pharmeasy_link} target="_blank"
                 whileHover={{ scale: 1.02, boxShadow: "0 0 20px rgba(99,102,241,0.3)" }}
                 className="block text-center py-2.5 rounded-xl text-sm font-semibold text-white"
-                style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
+                style={{ background: "var(--accent-gradient)" }}>
                 Order on Pharmeasy →
               </motion.a>
             )}

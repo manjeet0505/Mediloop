@@ -32,14 +32,14 @@ export function PrescriptionDemo() {
 
   return (
     <div className="rounded-2xl p-6 h-full"
-      style={{ background: "rgba(99,102,241,0.04)", border: "1px solid rgba(99,102,241,0.15)" }}>
+      style={{ background: "var(--bg-overlay)", border: "1px solid var(--border-default)" }}>
       {/* Header */}
       <div className="flex items-center gap-2 mb-5">
         <div className="relative">
           <div className="w-2.5 h-2.5 rounded-full bg-indigo-400" />
           <GlowRing color="rgba(99,102,241,0.6)" size={20} />
         </div>
-        <span className="text-xs font-mono text-indigo-400 uppercase tracking-widest">
+        <span className="text-xs font-mono uppercase tracking-widest" style={{ color: "var(--accent-primary)" }}>
           Agent 1 — Live Prescription Parser
         </span>
       </div>
@@ -47,8 +47,8 @@ export function PrescriptionDemo() {
       {/* Input */}
       <textarea value={text} onChange={e => setText(e.target.value)}
         placeholder="Paste prescription text here..."
-        className="w-full rounded-xl p-4 text-sm text-slate-300 resize-none font-mono mb-3"
-        style={{ background: "rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.07)", height: 130, outline: "none" }}
+        className="w-full rounded-xl p-4 text-sm resize-none font-mono mb-3"
+style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)", height: 130, outline: "none", color: "var(--text-primary)" }}
       />
 
       {/* Buttons */}
@@ -56,7 +56,7 @@ export function PrescriptionDemo() {
         <motion.button whileHover={{ scale: 1.03, boxShadow: "0 0 30px rgba(99,102,241,0.4)" }}
           whileTap={{ scale: 0.97 }} onClick={parse} disabled={loading || !text.trim()}
           className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-40"
-          style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
+         style={{ background: "var(--accent-gradient)" }}>
           {loading ? (
             <span className="flex items-center gap-2">
               <motion.span animate={{ rotate: 360 }}
@@ -68,8 +68,8 @@ export function PrescriptionDemo() {
         </motion.button>
         <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
           onClick={() => setText(SAMPLE)}
-          className="px-5 py-2.5 rounded-xl text-sm text-slate-400"
-          style={{ border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)" }}>
+          className="px-5 py-2.5 rounded-xl text-sm"
+style={{ border: "1px solid var(--border-subtle)", background: "var(--bg-overlay)", color: "var(--text-secondary)" }}>
           Load Sample
         </motion.button>
       </div>
@@ -77,7 +77,7 @@ export function PrescriptionDemo() {
       {/* Error */}
       {error && (
         <div className="text-red-400 text-xs font-mono p-3 rounded-xl mb-3"
-          style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.15)" }}>
+         style={{ background: "var(--danger-bg)", border: "1px solid var(--danger)" }}>
           ⚠ {error}
         </div>
       )}
@@ -87,8 +87,8 @@ export function PrescriptionDemo() {
         {result?.success && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-xs text-emerald-400 font-mono px-2 py-1 rounded-lg"
-                style={{ background: "rgba(16,185,129,0.1)" }}>
+              <span className="text-xs font-mono px-2 py-1 rounded-lg"
+              style={{ background: "var(--success-bg)", color: "var(--success)" }}>
                 ✓ PARSED via {result.llm_used?.toUpperCase()}
               </span>
             </div>
@@ -97,9 +97,9 @@ export function PrescriptionDemo() {
                 { l: "Patient", v: result.result?.patient_name },
                 { l: "Doctor", v: result.result?.doctor_name }
               ].map((f, i) => (
-                <div key={i} className="rounded-xl p-3" style={{ background: "rgba(0,0,0,0.4)" }}>
-                  <div className="text-xs text-slate-600 mb-1">{f.l}</div>
-                  <div className="text-sm text-white font-medium truncate">{f.v}</div>
+                <div key={i} className="rounded-xl p-3" style={{ background: "var(--bg-surface)" }}>
+                  <div className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>{f.l}</div>
+                  <div className="text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>{f.v}</div>
                 </div>
               ))}
             </div>
@@ -108,14 +108,14 @@ export function PrescriptionDemo() {
                 <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.08 }}
                   className="flex items-center justify-between rounded-xl p-3"
-                  style={{ background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.12)" }}>
+                  style={{ background: "var(--bg-overlay)", border: "1px solid var(--border-default)" }}>
                   <div>
-                    <div className="text-sm font-semibold text-white">{med.medicine_name}</div>
-                    <div className="text-xs text-slate-600">{med.frequency} · {med.duration}</div>
+                    <div className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{med.medicine_name}</div>
+                    <div className="text-xs" style={{ color: "var(--text-muted)" }}>{med.frequency} · {med.duration}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-mono text-indigo-400">{med.dosage}</div>
-                    <div className="text-xs text-slate-700">{med.times_per_day}×/day</div>
+                    <div className="text-sm font-mono" style={{ color: "var(--accent-primary)" }}>{med.dosage}</div>
+                    <div className="text-xs" style={{ color: "var(--text-muted)" }}>{med.times_per_day}×/day</div>
                   </div>
                 </motion.div>
               ))}

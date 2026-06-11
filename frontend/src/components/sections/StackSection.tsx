@@ -10,7 +10,7 @@ export function StackSection() {
         tag="Infrastructure"
         title="Production Stack"
         desc="Zero paid infrastructure. Every layer on free tier."
-        tagColor="#06b6d4"
+        tagColor="var(--accent-tertiary)"
       />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {TECH_STACK.map((s, i) => (
@@ -21,7 +21,7 @@ export function StackSection() {
             transition={{ delay: i * 0.08, type: "spring" }}
             whileHover={{ scale: 1.02, boxShadow: `0 20px 60px ${s.color}12` }}
             className="rounded-2xl p-6 relative overflow-hidden group"
-            style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}
+            style={{ background: "var(--bg-overlay)", border: "1px solid var(--border-subtle)" }}
           >
             <motion.div
               className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
