@@ -12,7 +12,7 @@ export function DemoSection() {
         tag="Live Demo"
         title="Try It Right Now"
         desc="Real API calls to your FastAPI backend. No mocking. No fake data."
-        tagColor="#6366f1"
+        tagColor="var(--accent-primary)"
       />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
         <PrescriptionDemo />
@@ -23,7 +23,7 @@ export function DemoSection() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
       >
-        <div className="text-xs font-mono text-slate-600 mb-3 uppercase tracking-widest">
+        <div className="text-xs font-mono mb-3 uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>
           Agent Activity Feed — Simulated
         </div>
         <Terminal />

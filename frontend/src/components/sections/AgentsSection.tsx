@@ -10,7 +10,7 @@ export function AgentsSection() {
         tag="Agent Network"
         title="5 Autonomous Agents"
         desc="Each agent has one job, one tool set, one clear output. Hover to see tools."
-        tagColor="#8b5cf6"
+        tagColor="var(--accent-secondary)"
       />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {AGENTS.map((agent, i) => (
