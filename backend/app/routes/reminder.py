@@ -10,6 +10,7 @@ from app.models.reminder import ReminderSchedule, DoseConfirmation
 
 router = APIRouter(prefix="/api/v1/reminder", tags=["Reminder Agent"])
 
+# schedule
 @router.post("/schedule")
 async def schedule_reminders(schedule: ReminderSchedule):
     """
