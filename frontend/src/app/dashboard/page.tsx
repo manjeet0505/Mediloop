@@ -189,13 +189,26 @@ export default function DashboardPage() {
       weekday: "long", day: "numeric", month: "long", year: "numeric"
     }));
 
-    const token = authService.getToken();
-    if (!token) return;
+    // Small delay to ensure localStorage is ready
+    const timer = setTimeout(() => {
+      const token = authService.getToken();
+      if (!token) {
+        window.location.href = "/login";
+        return;
+      }
 
-    fetchWithAuth(`${API}/api/v1/patients/`, token)
-      .then(setPatients)
-      .catch(() => setError("Could not load patients"))
-      .finally(() => setLoading(false));
+      fetchWithAuth(`${API}/api/v1/patients/`, token)
+        .then(data => {
+          setPatients(Array.isArray(data) ? data : []);
+        })
+        .catch((err) => {
+          console.error("Patient fetch error:", err);
+          setError("Could not load patients — check if backend is running");
+        })
+        .finally(() => setLoading(false));
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, []);
 
   // derive stats from real data
