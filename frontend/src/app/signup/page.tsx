@@ -1,7 +1,7 @@
 "use client";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { authApi } from "@/lib/api";
 import { authService } from "@/lib/auth";
 
@@ -21,7 +21,7 @@ const STATS = [
   { v: "₹0", l: "Infra Cost", c: "#06b6d4" },
 ];
 
-function LivePanel() {
+function LivePanel({ role }: { role: "clinic" | "patient" }) {
   const [logs, setLogs] = useState<(typeof LIVE_LOGS[0] & { time: string })[]>([]);
   const [idx, setIdx] = useState(0);
 
@@ -37,105 +37,116 @@ function LivePanel() {
   }, [idx]);
 
   return (
-    <div className="hidden lg:flex flex-col justify-between h-full p-12 relative overflow-hidden">
-      <div className="absolute inset-0">
-        <motion.div className="absolute rounded-full"
-          style={{ width: 600, height: 600, top: "20%", left: "30%", background: "radial-gradient(circle,rgba(99,102,241,0.15) 0%,transparent 70%)", transform: "translate(-50%,-50%)", filter: "blur(40px)" }}
-          animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 8, repeat: Infinity }}
-        />
-        <div className="absolute inset-0" style={{
-          backgroundImage: "linear-gradient(rgba(99,102,241,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(99,102,241,0.05) 1px,transparent 1px)",
+    <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", height: "100%", padding: 48, position: "relative", overflow: "hidden" }}>
+      <div style={{ position: "absolute", inset: 0 }}>
+        <motion.div style={{
+          position: "absolute", width: 600, height: 600, top: "20%", left: "30%",
+          background: "radial-gradient(circle,rgba(99,102,241,0.15) 0%,transparent 70%)",
+          transform: "translate(-50%,-50%)", filter: "blur(40px)"
+        }} animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 8, repeat: Infinity }} />
+        <div style={{
+          position: "absolute", inset: 0,
+          backgroundImage: "linear-gradient(var(--grid-line) 1px,transparent 1px),linear-gradient(90deg,var(--grid-line) 1px,transparent 1px)",
           backgroundSize: "50px 50px",
           maskImage: "radial-gradient(ellipse 80% 80% at 40% 50%,black 30%,transparent 100%)"
         }} />
       </div>
 
-      <div className="relative z-10">
+      <div style={{ position: "relative", zIndex: 10 }}>
         <motion.a href="/" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
-          className="inline-flex items-center gap-3 mb-8">
-          <div className="relative">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-white"
-              style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>M</div>
-            <motion.div className="absolute inset-0 rounded-xl -z-10"
-              style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)", filter: "blur(10px)" }}
-              animate={{ opacity: [0.4, 0.8, 0.4] }} transition={{ duration: 3, repeat: Infinity }} />
-          </div>
+          style={{ display: "inline-flex", alignItems: "center", gap: 12, marginBottom: 32, textDecoration: "none" }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: 12,
+            background: "var(--accent-gradient)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontWeight: 800, color: "var(--text-inverse)"
+          }}>M</div>
           <div>
-            <div className="font-black text-white">MedLoop AI</div>
-            <div className="text-xs text-slate-600 font-mono">Autonomous Care Platform</div>
+            <div style={{ fontWeight: 800, color: "var(--text-primary)" }}>MedLoop AI</div>
+            <div style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "monospace" }}>Autonomous Care Platform</div>
           </div>
         </motion.a>
 
-        <motion.h2 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="text-4xl font-black text-white leading-tight mb-4">
-          Join India's First<br />
-          <span style={{
+        <motion.h2 key={role} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+          style={{ fontSize: 32, fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.2, marginBottom: 16 }}>
+          {role === "patient" ? <>Take Control<br />Of Your <span style={{
             background: "linear-gradient(135deg,#818cf8,#a78bfa,#38bdf8)",
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent"
-          }}>Autonomous Care AI</span>
+          }}>Medication</span></> : <>Run Your Clinic<br />With <span style={{
+            background: "linear-gradient(135deg,#818cf8,#a78bfa,#38bdf8)",
+            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent"
+          }}>Autonomous AI</span></>}
         </motion.h2>
 
-        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
-          className="text-slate-500 text-sm leading-relaxed max-w-sm">
-          Set up your clinic in under 2 minutes. Your first 3 patients are free — no credit card required.
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
+          style={{ color: "var(--text-muted)", fontSize: 14, lineHeight: 1.6, maxWidth: 380 }}>
+          {role === "patient"
+            ? "Get WhatsApp reminders, track your adherence streak, and never run out of medicine again — all free."
+            : "5 AI agents handle prescription reading, reminders, stock monitoring and follow-ups for every patient."}
         </motion.p>
       </div>
 
-      <div className="relative z-10">
-        <div className="rounded-2xl overflow-hidden"
-          style={{ background: "rgba(0,0,0,0.6)", border: "1px solid rgba(99,102,241,0.2)" }}>
-          <div className="flex items-center justify-between px-4 py-2.5"
-            style={{ background: "rgba(99,102,241,0.08)", borderBottom: "1px solid rgba(99,102,241,0.1)" }}>
-            <div className="flex gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-red-500 opacity-70" />
-              <div className="w-2.5 h-2.5 rounded-full bg-yellow-500 opacity-70" />
-              <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-70" />
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+        style={{ position: "relative", zIndex: 10 }}>
+        <div style={{ borderRadius: 16, overflow: "hidden", background: "rgba(0,0,0,0.5)", border: "1px solid var(--border-default)" }}>
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "10px 16px", background: "color-mix(in srgb, var(--accent-primary) 8%, transparent)",
+            borderBottom: "1px solid var(--border-subtle)"
+          }}>
+            <div style={{ display: "flex", gap: 6 }}>
+              <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#ff5f57", opacity: 0.7 }} />
+              <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#febc2e", opacity: 0.7 }} />
+              <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#28c840", opacity: 0.7 }} />
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs font-mono text-emerald-500">LIVE</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--success)" }} />
+              <span style={{ fontSize: 10, color: "var(--success)", fontFamily: "monospace" }}>LIVE</span>
             </div>
           </div>
-          <div className="p-4 font-mono text-xs space-y-2" style={{ minHeight: 140 }}>
+          <div style={{ padding: 16, fontFamily: "monospace", fontSize: 12, display: "flex", flexDirection: "column", gap: 8, minHeight: 140 }}>
             <AnimatePresence>
               {logs.map((log, i) => (
                 <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
-                  className="flex gap-2 items-start">
-                  <span className="text-slate-700 shrink-0">{log.time}</span>
-                  <span className="px-1.5 py-0.5 rounded text-xs font-bold shrink-0"
-                    style={{ background: `${log.c}20`, color: log.c }}>{log.agent}</span>
-                  <span className="text-slate-400">{log.msg}</span>
+                  style={{ display: "flex", gap: 8 }}>
+                  <span style={{ color: "var(--text-muted)" }}>{log.time}</span>
+                  <span style={{ padding: "1px 6px", borderRadius: 4, fontWeight: 700, background: `${log.c}20`, color: log.c }}>
+                    {log.agent}
+                  </span>
+                  <span style={{ color: "var(--text-secondary)" }}>{log.msg}</span>
                 </motion.div>
               ))}
             </AnimatePresence>
-            <span className="text-indigo-400 animate-blink">█</span>
+            <span style={{ color: "var(--accent-primary)" }} className="animate-blink">█</span>
           </div>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="relative z-10 grid grid-cols-4 gap-3">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+        style={{ position: "relative", zIndex: 10, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
         {STATS.map((s, i) => (
-          <motion.div key={i} whileHover={{ y: -3 }}
-            className="rounded-xl p-3 text-center"
-            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-            <div className="text-lg font-black" style={{ color: s.c }}>{s.v}</div>
-            <div className="text-xs text-slate-700 mt-0.5">{s.l}</div>
-          </motion.div>
+          <div key={i} style={{ borderRadius: 12, padding: 12, textAlign: "center", background: "var(--bg-overlay)", border: "1px solid var(--border-subtle)" }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: s.c }}>{s.v}</div>
+            <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2 }}>{s.l}</div>
+          </div>
         ))}
-      </div>
+      </motion.div>
     </div>
   );
 }
 
-const STEPS = ["Account", "Clinic", "Security"];
+const CLINIC_STEPS = ["Account", "Clinic", "Security"];
+const PATIENT_STEPS = ["Account", "Security"];
 
 export default function SignupPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const [role, setRole] = useState<"clinic" | "patient">("clinic");
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
     full_name: "", email: "", phone: "",
-    clinic_name: "", role: "clinic",
+    clinic_name: "",
     password: "", confirm_password: "",
   });
   const [loading, setLoading] = useState(false);
@@ -143,8 +154,18 @@ export default function SignupPage() {
   const [showPass, setShowPass] = useState(false);
   const [focused, setFocused] = useState<string | null>(null);
 
+  const STEPS = role === "patient" ? PATIENT_STEPS : CLINIC_STEPS;
+
   useEffect(() => {
-    if (authService.isLoggedIn()) router.push("/dashboard");
+    const r = searchParams?.get("role");
+    if (r === "patient") setRole("patient");
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (authService.isLoggedIn()) {
+      const user = authService.getUser();
+      router.push(user?.role === "patient" ? "/patient/dashboard" : "/dashboard");
+    }
   }, []);
 
   const validate = () => {
@@ -153,8 +174,11 @@ export default function SignupPage() {
       if (!form.email.includes("@")) return setError("Valid email required") as unknown as boolean;
       if (!form.phone.startsWith("+91") || form.phone.length !== 13) return setError("Format: +91XXXXXXXXXX") as unknown as boolean;
     }
-    if (step === 1 && !form.clinic_name.trim()) return setError("Clinic name required") as unknown as boolean;
-    if (step === 2) {
+    if (role === "clinic" && step === 1 && !form.clinic_name.trim()) {
+      return setError("Clinic name required") as unknown as boolean;
+    }
+    const securityStep = role === "patient" ? 1 : 2;
+    if (step === securityStep) {
       if (form.password.length < 8) return setError("Min 8 characters") as unknown as boolean;
       if (!/[A-Z]/.test(form.password)) return setError("Needs uppercase letter") as unknown as boolean;
       if (!/[0-9]/.test(form.password)) return setError("Needs a number") as unknown as boolean;
@@ -177,11 +201,12 @@ export default function SignupPage() {
     try {
       const res = await authApi.signup({
         email: form.email, password: form.password,
-        full_name: form.full_name, role: form.role,
-        clinic_name: form.clinic_name, phone: form.phone,
+        full_name: form.full_name, role,
+        clinic_name: role === "clinic" ? form.clinic_name : undefined,
+        phone: form.phone,
       });
       authService.setSession(res.access_token, res.user);
-      router.push("/dashboard");
+      router.push(role === "patient" ? "/patient/dashboard" : "/dashboard");
     } catch {
       setError("Signup failed. Email may already be registered.");
     } finally {
@@ -189,163 +214,189 @@ export default function SignupPage() {
     }
   };
 
+  const inputStyle = {
+    width: "100%", padding: "12px 14px", fontSize: 14,
+    color: "var(--text-primary)", background: "var(--bg-overlay)",
+    border: "none", outline: "none", fontFamily: "inherit"
+  };
+
+  const wrap = (key: string) => ({
+    borderRadius: 12, overflow: "hidden" as const,
+    boxShadow: focused === key ? "0 0 0 2px var(--accent-primary)" : "0 0 0 1px var(--border-subtle)",
+    transition: "box-shadow 0.2s",
+  });
+
+  const securityStepIndex = role === "patient" ? 1 : 2;
+
   return (
-    <div className="min-h-screen flex" style={{ background: "#020408" }}>
+    <div style={{ minHeight: "100vh", display: "flex", background: "var(--bg-page)" }}>
 
       {/* Left panel */}
-      <div className="flex-1" style={{ borderRight: "1px solid rgba(99,102,241,0.1)" }}>
-        <LivePanel />
+      <div className="hidden lg:block" style={{ flex: 1, borderRight: "1px solid var(--border-subtle)" }}>
+        <LivePanel role={role} />
       </div>
 
       {/* Right — Signup form */}
-      <div className="w-full lg:w-[500px] flex items-center justify-center px-8 py-12 relative overflow-y-auto">
-        <div className="absolute inset-0 pointer-events-none"
-          style={{ background: "radial-gradient(ellipse at 80% 50%,rgba(99,102,241,0.05) 0%,transparent 60%)" }} />
+      <div style={{
+        width: "100%", maxWidth: 520, display: "flex", alignItems: "center",
+        justifyContent: "center", padding: "40px 32px", position: "relative", overflowY: "auto"
+      }}>
+        <div style={{
+          position: "absolute", inset: 0, pointerEvents: "none",
+          background: "radial-gradient(ellipse at 80% 50%,color-mix(in srgb, var(--accent-primary) 5%, transparent) 0%,transparent 60%)"
+        }} />
 
-        <div className="w-full max-w-sm relative z-10">
+        <div style={{ width: "100%", maxWidth: 380, position: "relative", zIndex: 10 }}>
 
-          <div className="mb-6">
-            <h2 className="text-3xl font-black text-white mb-2">Create Account</h2>
-            <p className="text-slate-500 text-sm">Join India's first autonomous care platform</p>
+          <div style={{ marginBottom: 20 }}>
+            <h2 style={{ fontSize: 26, fontWeight: 800, color: "var(--text-primary)", marginBottom: 6 }}>
+              Create Account
+            </h2>
+            <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
+              {role === "patient" ? "Start your medicine journey — free forever" : "Set up your clinic in under 2 minutes"}
+            </p>
+          </div>
+
+          {/* Role selector */}
+          <div style={{
+            display: "flex", gap: 6, marginBottom: 18,
+            background: "var(--bg-surface)", borderRadius: 14, padding: 5,
+            border: "1px solid var(--border-subtle)"
+          }}>
+            {([
+              { id: "clinic" as const, label: "Clinic / Doctor", icon: "ti-stethoscope" },
+              { id: "patient" as const, label: "Patient", icon: "ti-user-heart" },
+            ]).map(opt => (
+              <motion.button key={opt.id} type="button"
+                onClick={() => { setRole(opt.id); setStep(0); setError(""); }}
+                whileTap={{ scale: 0.97 }}
+                style={{
+                  flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
+                  padding: "10px 8px", borderRadius: 10, border: "none", cursor: "pointer",
+                  background: role === opt.id
+                    ? "color-mix(in srgb, var(--accent-primary) 14%, transparent)"
+                    : "transparent",
+                  transition: "background 0.2s",
+                }}>
+                <i className={`ti ${opt.icon}`} style={{
+                  fontSize: 17, color: role === opt.id ? "var(--accent-primary)" : "var(--text-muted)"
+                }} />
+                <span style={{
+                  fontSize: 11, fontWeight: role === opt.id ? 600 : 400,
+                  color: role === opt.id ? "var(--accent-primary)" : "var(--text-muted)"
+                }}>{opt.label}</span>
+              </motion.button>
+            ))}
           </div>
 
           {/* Stepper */}
-          <div className="flex items-center gap-2 mb-6">
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18 }}>
             {STEPS.map((s, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <motion.div
-                  animate={{
-                    background: i < step ? "linear-gradient(135deg,#10b981,#059669)" : i === step ? "linear-gradient(135deg,#6366f1,#8b5cf6)" : "rgba(255,255,255,0.05)",
-                    scale: i === step ? 1.1 : 1,
-                  }}
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white">
-                  {i < step ? "✓" : i + 1}
-                </motion.div>
-                <span className={`text-xs font-mono ${i === step ? "text-indigo-400" : "text-slate-700"}`}>{s}</span>
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <motion.div animate={{
+                  background: i < step ? "linear-gradient(135deg,#10b981,#059669)" : i === step ? "var(--accent-gradient)" : "var(--bg-overlay)",
+                  scale: i === step ? 1.1 : 1,
+                }} style={{
+                  width: 26, height: 26, borderRadius: "50%",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 11, fontWeight: 700, color: i <= step ? "var(--text-inverse)" : "var(--text-muted)"
+                }}>{i < step ? "✓" : i + 1}</motion.div>
+                <span style={{ fontSize: 11, fontFamily: "monospace", color: i === step ? "var(--accent-primary)" : "var(--text-muted)" }}>
+                  {s}
+                </span>
                 {i < STEPS.length - 1 && (
-                  <motion.div className="w-6 h-px mx-1"
-                    animate={{ background: i < step ? "#10b981" : "rgba(255,255,255,0.08)" }} />
+                  <div style={{ width: 20, height: 1, background: i < step ? "var(--success)" : "var(--border-subtle)" }} />
                 )}
               </div>
             ))}
           </div>
 
           {/* Form card */}
-          <motion.div className="rounded-2xl p-6 mb-4"
-            style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+          <div style={{
+            background: "var(--bg-surface)", border: "1px solid var(--border-subtle)",
+            borderRadius: 18, padding: 22, marginBottom: 16
+          }}>
             <form onSubmit={handleSubmit}>
               <AnimatePresence mode="wait">
 
                 {step === 0 && (
-                  <motion.div key="s0" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }} className="space-y-4">
-                    <div className="text-xs font-mono text-indigo-400 uppercase tracking-widest mb-3">Your Details</div>
+                  <motion.div key="s0" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }}
+                    style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                     {[
-                      { k: "full_name", l: "Full Name", t: "text", p: "Dr. Anjali Sharma" },
-                      { k: "email", l: "Email", t: "email", p: "doctor@clinic.com" },
+                      { k: "full_name", l: "Full Name", t: "text", p: role === "patient" ? "Rahul Sharma" : "Dr. Anjali Sharma" },
+                      { k: "email", l: "Email", t: "email", p: role === "patient" ? "you@example.com" : "doctor@clinic.com" },
                       { k: "phone", l: "Phone", t: "tel", p: "+91XXXXXXXXXX" },
                     ].map(f => (
                       <div key={f.k}>
-                        <label className="text-xs font-mono text-slate-500 uppercase tracking-widest mb-1.5 block">{f.l}</label>
-                        <motion.div animate={{ boxShadow: focused === f.k ? "0 0 0 2px rgba(99,102,241,0.4)" : "0 0 0 1px rgba(255,255,255,0.06)" }}
-                          className="rounded-xl overflow-hidden">
+                        <label style={{ fontSize: 11, fontFamily: "monospace", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>
+                          {f.l}
+                        </label>
+                        <div style={wrap(f.k)}>
                           <input type={f.t} value={(form as any)[f.k]}
                             onChange={e => setForm({ ...form, [f.k]: e.target.value })}
                             onFocus={() => setFocused(f.k)} onBlur={() => setFocused(null)}
-                            placeholder={f.p}
-                            className="w-full px-4 py-3 text-sm text-white placeholder-slate-600 outline-none"
-                            style={{ background: "rgba(0,0,0,0.5)" }}
-                          />
-                        </motion.div>
+                            placeholder={f.p} style={inputStyle} />
+                        </div>
                       </div>
                     ))}
                   </motion.div>
                 )}
 
-                {step === 1 && (
-                  <motion.div key="s1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }} className="space-y-4">
-                    <div className="text-xs font-mono text-indigo-400 uppercase tracking-widest mb-3">Clinic Details</div>
+                {role === "clinic" && step === 1 && (
+                  <motion.div key="s1" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }}
+                    style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                     <div>
-                      <label className="text-xs font-mono text-slate-500 uppercase tracking-widest mb-1.5 block">Clinic Name</label>
-                      <motion.div animate={{ boxShadow: focused === "clinic" ? "0 0 0 2px rgba(99,102,241,0.4)" : "0 0 0 1px rgba(255,255,255,0.06)" }}
-                        className="rounded-xl overflow-hidden">
+                      <label style={{ fontSize: 11, fontFamily: "monospace", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>
+                        Clinic Name
+                      </label>
+                      <div style={wrap("clinic")}>
                         <input type="text" value={form.clinic_name}
                           onChange={e => setForm({ ...form, clinic_name: e.target.value })}
                           onFocus={() => setFocused("clinic")} onBlur={() => setFocused(null)}
-                          placeholder="Apollo Clinic, Gurugram"
-                          className="w-full px-4 py-3 text-sm text-white placeholder-slate-600 outline-none"
-                          style={{ background: "rgba(0,0,0,0.5)" }}
-                        />
-                      </motion.div>
-                    </div>
-                    <div>
-                      <label className="text-xs font-mono text-slate-500 uppercase tracking-widest mb-2 block">Account Type</label>
-                      <div className="grid grid-cols-2 gap-3">
-                        {[
-                          { v: "clinic", l: "Clinic", d: "Full platform access" },
-                          { v: "doctor", l: "Doctor", d: "Patient summaries" },
-                        ].map(opt => (
-                          <motion.div key={opt.v} whileHover={{ scale: 1.02 }}
-                            onClick={() => setForm({ ...form, role: opt.v })}
-                            className="rounded-xl p-3 cursor-pointer"
-                            style={{
-                              background: form.role === opt.v ? "rgba(99,102,241,0.12)" : "rgba(0,0,0,0.3)",
-                              border: `1px solid ${form.role === opt.v ? "rgba(99,102,241,0.4)" : "rgba(255,255,255,0.06)"}`,
-                            }}>
-                            <div className="font-semibold text-white text-sm">{opt.l}</div>
-                            <div className="text-xs text-slate-600 mt-0.5">{opt.d}</div>
-                          </motion.div>
-                        ))}
+                          placeholder="Apollo Clinic, Gurugram" style={inputStyle} />
                       </div>
                     </div>
                   </motion.div>
                 )}
 
-                {step === 2 && (
-                  <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }} className="space-y-4">
-                    <div className="text-xs font-mono text-indigo-400 uppercase tracking-widest mb-3">Set Password</div>
+                {step === securityStepIndex && (
+                  <motion.div key="sec" initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }}
+                    style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                     <div>
-                      <label className="text-xs font-mono text-slate-500 uppercase tracking-widest mb-1.5 block">Password</label>
-                      <motion.div animate={{ boxShadow: focused === "pass" ? "0 0 0 2px rgba(99,102,241,0.4)" : "0 0 0 1px rgba(255,255,255,0.06)" }}
-                        className="rounded-xl overflow-hidden flex">
+                      <label style={{ fontSize: 11, fontFamily: "monospace", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>
+                        Password
+                      </label>
+                      <div style={{ ...wrap("pass"), display: "flex" }}>
                         <input type={showPass ? "text" : "password"} value={form.password}
                           onChange={e => setForm({ ...form, password: e.target.value })}
                           onFocus={() => setFocused("pass")} onBlur={() => setFocused(null)}
                           placeholder="Min 8 chars, A-Z, 0-9, symbol"
-                          className="flex-1 px-4 py-3 text-sm text-white placeholder-slate-600 outline-none"
-                          style={{ background: "rgba(0,0,0,0.5)" }}
-                        />
+                          style={{ ...inputStyle, flex: 1 }} />
                         <button type="button" onClick={() => setShowPass(!showPass)}
-                          className="px-3 text-slate-600 hover:text-slate-400 text-xs"
-                          style={{ background: "rgba(0,0,0,0.5)" }}>
+                          style={{ padding: "0 12px", background: "var(--bg-overlay)", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: 11, fontFamily: "monospace" }}>
                           {showPass ? "HIDE" : "SHOW"}
                         </button>
-                      </motion.div>
+                      </div>
                       {form.password && (
-                        <div className="flex gap-1 mt-2">
+                        <div style={{ display: "flex", gap: 4, marginTop: 6 }}>
                           {[form.password.length >= 8, /[A-Z]/.test(form.password), /[0-9]/.test(form.password), /[!@#$%^&*]/.test(form.password)].map((m, i) => (
-                            <motion.div key={i} className="h-1 flex-1 rounded-full"
-                              animate={{ background: m ? "#10b981" : "rgba(255,255,255,0.08)" }} />
+                            <div key={i} style={{ height: 3, flex: 1, borderRadius: 2, background: m ? "var(--success)" : "var(--border-subtle)" }} />
                           ))}
                         </div>
                       )}
                     </div>
                     <div>
-                      <label className="text-xs font-mono text-slate-500 uppercase tracking-widest mb-1.5 block">Confirm Password</label>
-                      <motion.div animate={{ boxShadow: focused === "confirm" ? "0 0 0 2px rgba(99,102,241,0.4)" : "0 0 0 1px rgba(255,255,255,0.06)" }}
-                        className="rounded-xl overflow-hidden">
+                      <label style={{ fontSize: 11, fontFamily: "monospace", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>
+                        Confirm Password
+                      </label>
+                      <div style={wrap("confirm")}>
                         <input type="password" value={form.confirm_password}
                           onChange={e => setForm({ ...form, confirm_password: e.target.value })}
                           onFocus={() => setFocused("confirm")} onBlur={() => setFocused(null)}
-                          placeholder="Re-enter password"
-                          className="w-full px-4 py-3 text-sm text-white placeholder-slate-600 outline-none"
-                          style={{ background: "rgba(0,0,0,0.5)" }}
-                        />
-                      </motion.div>
+                          placeholder="Re-enter password" style={inputStyle} />
+                      </div>
                       {form.confirm_password && (
-                        <div className={`text-xs font-mono mt-1.5 ${form.password === form.confirm_password ? "text-emerald-400" : "text-red-400"}`}>
+                        <div style={{ fontSize: 11, fontFamily: "monospace", marginTop: 5, color: form.password === form.confirm_password ? "var(--success)" : "var(--danger)" }}>
                           {form.password === form.confirm_password ? "✓ Passwords match" : "✗ Passwords don't match"}
                         </div>
                       )}
@@ -356,62 +407,53 @@ export default function SignupPage() {
 
               <AnimatePresence>
                 {error && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="rounded-xl px-4 py-3 text-xs font-mono text-red-400 mt-4"
-                    style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.15)" }}>
-                    ⚠ {error}
-                  </motion.div>
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+                    style={{
+                      padding: "10px 14px", borderRadius: 10, fontSize: 12, fontFamily: "monospace", marginTop: 14,
+                      background: "color-mix(in srgb, var(--danger) 10%, transparent)",
+                      border: "1px solid color-mix(in srgb, var(--danger) 20%, transparent)",
+                      color: "var(--danger)"
+                    }}>⚠ {error}</motion.div>
                 )}
               </AnimatePresence>
 
-              <div className="flex gap-3 mt-5">
+              <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
                 {step > 0 && (
                   <motion.button type="button" onClick={() => { setError(""); setStep(s => s - 1); }}
                     whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                    className="flex-1 py-3 rounded-xl font-semibold text-slate-400 text-sm"
-                    style={{ border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)" }}>
-                    ← Back
-                  </motion.button>
+                    style={{
+                      flex: 1, padding: "12px", borderRadius: 12, fontSize: 13, fontWeight: 600,
+                      border: "1px solid var(--border-subtle)", background: "transparent", color: "var(--text-secondary)", cursor: "pointer"
+                    }}>← Back</motion.button>
                 )}
-                {step < 2 ? (
+                {step < STEPS.length - 1 ? (
                   <motion.button type="button" onClick={handleNext}
-                    whileHover={{ scale: 1.02, boxShadow: "0 0 25px rgba(99,102,241,0.4)" }}
+                    whileHover={{ scale: 1.02, boxShadow: "0 8px 25px color-mix(in srgb, var(--accent-primary) 35%, transparent)" }}
                     whileTap={{ scale: 0.98 }}
-                    className="flex-1 py-3 rounded-xl font-bold text-white text-sm"
-                    style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
-                    Continue →
-                  </motion.button>
+                    style={{
+                      flex: 1, padding: "12px", borderRadius: 12, fontSize: 13, fontWeight: 600,
+                      border: "none", cursor: "pointer", background: "var(--accent-gradient)", color: "var(--text-inverse)"
+                    }}>Continue →</motion.button>
                 ) : (
                   <motion.button type="submit" disabled={loading}
-                    whileHover={{ scale: 1.02, boxShadow: "0 0 30px rgba(99,102,241,0.4)" }}
+                    whileHover={{ scale: 1.02, boxShadow: "0 8px 25px color-mix(in srgb, var(--accent-primary) 35%, transparent)" }}
                     whileTap={{ scale: 0.98 }}
-                    className="flex-1 py-3 rounded-xl font-bold text-white text-sm disabled:opacity-60"
-                    style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }}>
-                    <span className="flex items-center justify-center gap-2">
-                      {loading ? (
-                        <>
-                          <motion.span animate={{ rotate: 360 }}
-                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                            className="w-4 h-4 border-2 border-white border-t-transparent rounded-full inline-block" />
-                          Creating...
-                        </>
-                      ) : "Create Account →"}
-                    </span>
-                  </motion.button>
+                    style={{
+                      flex: 1, padding: "12px", borderRadius: 12, fontSize: 13, fontWeight: 600,
+                      border: "none", cursor: loading ? "not-allowed" : "pointer",
+                      background: "var(--accent-gradient)", color: "var(--text-inverse)", opacity: loading ? 0.7 : 1
+                    }}>{loading ? "Creating..." : "Create Account →"}</motion.button>
                 )}
               </div>
             </form>
-          </motion.div>
-
-          <div className="text-center">
-            <span className="text-sm text-slate-600">Already have an account? </span>
-            <motion.a href="/login" whileHover={{ color: "#a5b4fc" }}
-              className="text-sm text-indigo-400 font-semibold">Sign in →</motion.a>
           </div>
-          <p className="text-center text-xs text-slate-800 font-mono mt-4">
-            JWT + AES-256 · HIPAA-lite Security
-          </p>
+
+          <div style={{ textAlign: "center" }}>
+            <span style={{ fontSize: 13, color: "var(--text-muted)" }}>Already have an account? </span>
+            <a href="/login" style={{ fontSize: 13, color: "var(--accent-primary)", fontWeight: 600, textDecoration: "none" }}>
+              Sign in →
+            </a>
+          </div>
         </div>
       </div>
     </div>
