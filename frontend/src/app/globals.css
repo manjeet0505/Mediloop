@@ -223,3 +223,14 @@ body { font-family: 'Inter', sans-serif; overflow-x: hidden; transition: backgro
     linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
   background-size: 80px 80px;
 }
+.patient-mobile-nav {
+  display: none !important;
+}
+@media (max-width: 768px) {
+  .patient-desktop-nav {
+    display: none !important;
+  }
+  .patient-mobile-nav {
+    display: flex !important;
+  }
+}
