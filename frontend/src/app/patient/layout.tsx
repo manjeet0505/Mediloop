@@ -225,7 +225,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
         </AnimatePresence>
       </main>
 
-      <nav className="patient-mobile-nav" style={{
+     <nav style={{
         position: "fixed", bottom: 0, left: 0, right: 0,
         background: "color-mix(in srgb, var(--bg-surface) 96%, transparent)",
         backdropFilter: "blur(20px)",
@@ -233,7 +233,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
         padding: "8px 0 16px",
         zIndex: 30,
         display: "flex", justifyContent: "space-around", alignItems: "center",
-      }}>
+      }} className="patient-mobile-nav">
         {[...NAV_ITEMS, { label: "Profile", href: "/patient/profile", icon: "ti-user" }].map((item) => {
           const active = pathname === item.href;
           return (
@@ -252,7 +252,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
         })}
       </nav>
 
-      <style jsx global>{`
+     <style jsx global>{`
         .patient-mobile-nav { display: none; }
         @media (max-width: 768px) {
           .patient-desktop-nav { display: none !important; }
