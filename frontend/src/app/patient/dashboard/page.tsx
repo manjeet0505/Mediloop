@@ -3,6 +3,17 @@ import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import { authService } from "@/lib/auth";
 
+
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+async function fetchPatient(path: string, token: string) {
+  const res = await fetch(`${API}/api/v1/patient${path}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`${res.status}`);
+  return res.json();
+}
+
 const MEDICINES = [
   { name: "Metformin", dosage: "500mg", time: "9:00 AM", taken: true, color: "#6366f1" },
   { name: "Metformin", dosage: "500mg", time: "9:00 PM", taken: false, color: "#6366f1" },
