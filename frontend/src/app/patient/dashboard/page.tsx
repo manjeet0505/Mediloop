@@ -3,7 +3,6 @@ import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import { authService } from "@/lib/auth";
 
-
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 async function fetchPatient(path: string, token: string) {
@@ -14,14 +13,7 @@ async function fetchPatient(path: string, token: string) {
   return res.json();
 }
 
-const MEDICINES = [
-  { name: "Metformin", dosage: "500mg", time: "9:00 AM", taken: true, color: "#6366f1" },
-  { name: "Metformin", dosage: "500mg", time: "9:00 PM", taken: false, color: "#6366f1" },
-  { name: "Amlodipine", dosage: "5mg", time: "9:00 AM", taken: true, color: "#06b6d4" },
-  { name: "Vitamin D3", dosage: "60000IU", time: "weekly · 9:00 AM", taken: true, color: "#10b981" },
-];
-
-const WEEK = [
+const WEEK_DEFAULT = [
   { d: "M", p: 100 }, { d: "T", p: 67 }, { d: "W", p: 100 },
   { d: "T", p: 33 }, { d: "F", p: 100 }, { d: "S", p: 67 }, { d: "S", p: 67 },
 ];
@@ -64,10 +56,7 @@ function Ring({ value, size = 156 }: { value: number; size?: number }) {
         position: "absolute", inset: 0, display: "flex",
         flexDirection: "column", alignItems: "center", justifyContent: "center",
       }}>
-        <span style={{
-          fontSize: 30, fontWeight: 600, color: "var(--text-primary)",
-          letterSpacing: "-0.03em", lineHeight: 1,
-        }}>
+        <span style={{ fontSize: 30, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.03em", lineHeight: 1 }}>
           {value}<span style={{ fontSize: 15, color: "var(--text-muted)", fontWeight: 400 }}>%</span>
         </span>
       </div>
@@ -81,14 +70,35 @@ function Divider() {
 
 export default function PatientDashboard() {
   const [user, setUser] = useState<any>(null);
-  const [meds, setMeds] = useState(MEDICINES);
+  const [meds, setMeds] = useState<any[]>([]);
   const [confirming, setConfirming] = useState<number | null>(null);
-  const [done, setDone] = useState(false);
-  const adherence = 87;
-  const streak = 5;
+  const [adherenceData, setAdherenceData] = useState<any>(null);
+  const [stockData, setStockData] = useState<any[]>([]);
+  const [greeting, setGreeting] = useState("Good morning");
 
   useEffect(() => {
     setUser(authService.getUser());
+    const hour = new Date().getHours();
+    setGreeting(hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening");
+
+    const timer = setTimeout(async () => {
+      const token = authService.getToken();
+      if (!token) return;
+      try {
+        const [medicines, adherence, stock] = await Promise.all([
+          fetchPatient("/me/medicines", token),
+          fetchPatient("/me/adherence", token),
+          fetchPatient("/me/stock", token),
+        ]);
+        setMeds(medicines);
+        setAdherenceData(adherence);
+        setStockData(stock);
+      } catch (err) {
+        console.error("Patient API error:", err);
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const markTaken = (i: number) => {
@@ -99,25 +109,27 @@ export default function PatientDashboard() {
     }, 600);
   };
 
+  const adherence = adherenceData?.overall ?? 87;
+  const streak = adherenceData?.streak ?? 5;
+  const weekData = adherenceData?.week ?? WEEK_DEFAULT;
   const taken = meds.filter(m => m.taken).length;
   const total = meds.length;
   const nextDose = meds.find(m => !m.taken);
   const name = user?.full_name?.split(" ")[0] ?? "";
-  const hour = new Date().getHours();
-  const greet = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const dateStr = new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" });
+  const lowStock = stockData.filter((s: any) => s.days_left <= 7);
 
   return (
     <motion.div variants={stagger.container} initial="hidden" animate="show"
       style={{ display: "flex", flexDirection: "column", gap: 18 }}>
 
-      {/* ── Header row ── */}
+      {/* Header */}
       <motion.div variants={stagger.item}
         style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
         <div>
-          <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 5, letterSpacing: "0.01em" }}>{dateStr}</p>
+          <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 5 }}>{dateStr}</p>
           <h1 style={{ fontSize: 26, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.025em" }}>
-            {greet}{name ? `, ${name}` : ""}
+            {greeting}{name ? `, ${name}` : ""}
           </h1>
         </div>
         <div style={{
@@ -140,7 +152,7 @@ export default function PatientDashboard() {
         </div>
       </motion.div>
 
-      {/* ── Hero — next dose ── */}
+      {/* Hero next dose */}
       {nextDose && (
         <motion.div variants={stagger.item}
           style={{
@@ -163,42 +175,34 @@ export default function PatientDashboard() {
               <i className="ti ti-clock" style={{ fontSize: 20, color: "var(--accent-primary)" }} />
             </div>
             <div>
-              <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 4, letterSpacing: "0.01em" }}>
-                Next dose
-              </p>
+              <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 4 }}>Next dose</p>
               <p style={{ fontSize: 17, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>
                 {nextDose.name} <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>{nextDose.dosage}</span>
               </p>
               <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 2 }}>{nextDose.time}</p>
             </div>
           </div>
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={() => {
-              const i = meds.findIndex(m => !m.taken);
-              if (i !== -1) markTaken(i);
-            }}
+          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+            onClick={() => { const i = meds.findIndex(m => !m.taken); if (i !== -1) markTaken(i); }}
             style={{
               padding: "11px 22px", borderRadius: 10, fontSize: 13.5,
               fontWeight: 500, border: "none", cursor: "pointer",
-              background: "var(--text-primary)", color: "var(--bg-page)",
-              flexShrink: 0, position: "relative",
+              background: "var(--text-primary)", color: "var(--bg-page)", flexShrink: 0,
             }}>
             Mark taken
           </motion.button>
         </motion.div>
       )}
 
-      {/* ── Stat strip ── */}
+      {/* Stat strip */}
       <motion.div variants={stagger.item}
         style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}
         className="patient-stat-grid">
         {[
-          { l: "Doses today", v: `${taken}/${total}` },
-          { l: "This week", v: "91%" },
+          { l: "Doses today", v: total > 0 ? `${taken}/${total}` : "—" },
+          { l: "This week", v: `${adherenceData?.week?.filter((w: any) => w.p === 100).length ?? 0}/7` },
           { l: "All time", v: `${adherence}%` },
-          { l: "Stock runs out", v: "2 days", danger: true },
+          { l: "Stock runs out", v: lowStock[0] ? `${lowStock[0].days_left} days` : "OK", danger: lowStock.length > 0 },
         ].map((s, i) => (
           <motion.div key={i} whileHover={{ y: -2, transition: { duration: 0.18 } }}
             style={{
@@ -213,23 +217,18 @@ export default function PatientDashboard() {
         ))}
       </motion.div>
 
-      {/* ── Main grid ── */}
+      {/* Main grid */}
       <div style={{ display: "grid", gridTemplateColumns: "300px 1fr 268px", gap: 14 }} className="patient-main-grid">
 
-        {/* Left — adherence */}
+        {/* Adherence */}
         <motion.div variants={stagger.item}
-          style={{
-            background: "var(--bg-surface)", border: "1px solid var(--border-subtle)",
-            borderRadius: 16, padding: "22px",
-          }}>
+          style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)", borderRadius: 16, padding: "22px" }}>
           <p style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 20 }}>Adherence</p>
-
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 22 }}>
             <Ring value={adherence} />
           </div>
-
           <div style={{ display: "flex", gap: 5, alignItems: "flex-end", marginBottom: 20 }}>
-            {WEEK.map((day, i) => {
+            {weekData.map((day: any, i: number) => {
               const isToday = i === 6;
               const fill = day.p === 100 ? "var(--success)" : day.p >= 66 ? "var(--warning)" : "var(--danger)";
               return (
@@ -247,83 +246,61 @@ export default function PatientDashboard() {
               );
             })}
           </div>
-
           <Divider />
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 14 }}>
             <div>
-              <p style={{ fontSize: 17, fontWeight: 600, color: "var(--text-primary)" }}>52</p>
+              <p style={{ fontSize: 17, fontWeight: 600, color: "var(--text-primary)" }}>{adherenceData?.taken_total ?? 52}</p>
               <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>taken</p>
             </div>
             <div>
-              <p style={{ fontSize: 17, fontWeight: 600, color: "var(--text-primary)" }}>8</p>
+              <p style={{ fontSize: 17, fontWeight: 600, color: "var(--text-primary)" }}>{adherenceData?.missed_total ?? 8}</p>
               <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>missed</p>
             </div>
           </div>
         </motion.div>
 
-        {/* Center — medicines + vitals */}
+        {/* Medicines + Vitals */}
         <motion.div variants={stagger.item}
-          style={{
-            background: "var(--bg-surface)", border: "1px solid var(--border-subtle)",
-            borderRadius: 16, padding: "22px", display: "flex", flexDirection: "column", gap: 0,
-          }}>
+          style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)", borderRadius: 16, padding: "22px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
             <p style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)" }}>Today's medicines</p>
             <p style={{ fontSize: 12.5, color: "var(--text-muted)" }}>{taken} of {total} taken</p>
           </div>
-
           <div>
             <AnimatePresence>
               {meds.map((med, i) => (
-                <motion.div key={i}
-                  layout
+                <motion.div key={i} layout
                   style={{
-                    display: "flex", alignItems: "center", gap: 14,
-                    padding: "13px 0",
+                    display: "flex", alignItems: "center", gap: 14, padding: "13px 0",
                     borderBottom: i < meds.length - 1 ? "1px solid var(--border-subtle)" : "none",
                   }}>
-                  <div style={{
-                    width: 3, height: 28, borderRadius: 2, flexShrink: 0,
-                    background: med.color, opacity: med.taken ? 0.35 : 1,
-                    transition: "opacity 0.3s",
-                  }} />
+                  <div style={{ width: 3, height: 28, borderRadius: 2, flexShrink: 0, background: med.color, opacity: med.taken ? 0.35 : 1, transition: "opacity 0.3s" }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontSize: 13.5, fontWeight: 500, color: "var(--text-primary)", marginBottom: 2 }}>
-                      {med.name}{" "}
-                      <span style={{ fontSize: 12.5, color: "var(--text-muted)", fontWeight: 400 }}>{med.dosage}</span>
+                      {med.name} <span style={{ fontSize: 12.5, color: "var(--text-muted)", fontWeight: 400 }}>{med.dosage}</span>
                     </p>
                     <p style={{ fontSize: 12, color: "var(--text-muted)" }}>{med.time}</p>
                   </div>
-
                   <AnimatePresence mode="wait">
                     {med.taken ? (
-                      <motion.span key="taken"
-                        initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
-                        style={{ fontSize: 12, color: "var(--success)", fontWeight: 500 }}>
-                        Taken
-                      </motion.span>
+                      <motion.span key="taken" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
+                        style={{ fontSize: 12, color: "var(--success)", fontWeight: 500 }}>Taken</motion.span>
                     ) : confirming === i ? (
-                      <motion.div key="loading"
-                        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                        style={{ display: "flex", gap: 3 }}>
+                      <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: "flex", gap: 3 }}>
                         {[0, 1, 2].map(d => (
-                          <motion.div key={d}
-                            animate={{ y: [0, -4, 0] }}
+                          <motion.div key={d} animate={{ y: [0, -4, 0] }}
                             transition={{ duration: 0.5, repeat: Infinity, delay: d * 0.1 }}
-                            style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--text-muted)" }}
-                          />
+                            style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--text-muted)" }} />
                         ))}
                       </motion.div>
                     ) : (
-                      <motion.button key="btn"
-                        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                      <motion.button key="btn" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                         whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.96 }}
                         onClick={() => markTaken(i)}
                         style={{
-                          padding: "7px 14px", borderRadius: 8, fontSize: 12.5,
-                          fontWeight: 500, border: "1px solid var(--border-default)",
-                          background: "transparent", color: "var(--text-secondary)",
-                          cursor: "pointer", flexShrink: 0,
+                          padding: "7px 14px", borderRadius: 8, fontSize: 12.5, fontWeight: 500,
+                          border: "1px solid var(--border-default)", background: "transparent",
+                          color: "var(--text-secondary)", cursor: "pointer", flexShrink: 0,
                         }}>
                         Mark taken
                       </motion.button>
@@ -333,24 +310,19 @@ export default function PatientDashboard() {
               ))}
             </AnimatePresence>
           </div>
-
           <Divider />
           <div style={{ marginTop: 18 }}>
             <p style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 12 }}>Latest vitals</p>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
               {VITALS.map((v, i) => (
                 <motion.div key={i} whileHover={{ y: -2, transition: { duration: 0.15 } }}
-                  style={{
-                    padding: "12px 14px", borderRadius: 10,
-                    background: "var(--bg-overlay)", border: "1px solid var(--border-subtle)",
-                  }}>
+                  style={{ padding: "12px 14px", borderRadius: 10, background: "var(--bg-overlay)", border: "1px solid var(--border-subtle)" }}>
                   <p style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>
                     {v.value} <span style={{ fontSize: 10.5, color: "var(--text-muted)", fontWeight: 400 }}>{v.unit}</span>
                   </p>
                   <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>{v.label}</p>
                   <div style={{
-                    display: "inline-block", marginTop: 6,
-                    fontSize: 10, padding: "2px 7px", borderRadius: 4,
+                    display: "inline-block", marginTop: 6, fontSize: 10, padding: "2px 7px", borderRadius: 4,
                     background: v.ok ? "color-mix(in srgb, var(--success) 12%, transparent)" : "color-mix(in srgb, var(--warning) 12%, transparent)",
                     color: v.ok ? "var(--success)" : "var(--warning)",
                   }}>
@@ -365,50 +337,49 @@ export default function PatientDashboard() {
         {/* Right sidebar */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
 
-          <motion.div variants={stagger.item}
-            style={{
-              background: "var(--bg-surface)", borderRadius: 14, padding: 18,
-              border: "1px solid color-mix(in srgb, var(--danger) 22%, var(--border-subtle))",
-            }}>
-            <p style={{ fontSize: 12.5, fontWeight: 500, color: "var(--danger)", marginBottom: 7 }}>
-              Stock running low
-            </p>
-            <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.55, marginBottom: 14 }}>
-              Metformin runs out in <strong style={{ color: "var(--text-primary)" }}>2 days</strong>.
-            </p>
-            <motion.a href="https://pharmeasy.in/search/all?name=Metformin" target="_blank"
-              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+          {/* Stock alert — real data */}
+          {lowStock.length > 0 ? lowStock.map((s: any, i: number) => (
+            <motion.div key={i} variants={stagger.item}
               style={{
-                display: "block", textAlign: "center", padding: "10px",
-                borderRadius: 9, fontSize: 13, fontWeight: 500,
-                background: "var(--text-primary)", color: "var(--bg-page)",
-                textDecoration: "none",
+                background: "var(--bg-surface)", borderRadius: 14, padding: 18,
+                border: "1px solid color-mix(in srgb, var(--danger) 22%, var(--border-subtle))",
               }}>
-              Reorder
-            </motion.a>
-          </motion.div>
+              <p style={{ fontSize: 12.5, fontWeight: 500, color: "var(--danger)", marginBottom: 7 }}>Stock running low</p>
+              <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.55, marginBottom: 14 }}>
+                {s.name} runs out in <strong style={{ color: "var(--text-primary)" }}>{s.days_left} days</strong>.
+              </p>
+              <motion.a href={`https://pharmeasy.in/search/all?name=${s.name}`} target="_blank"
+                whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                style={{
+                  display: "block", textAlign: "center", padding: "10px", borderRadius: 9,
+                  fontSize: 13, fontWeight: 500, background: "var(--text-primary)",
+                  color: "var(--bg-page)", textDecoration: "none",
+                }}>
+                Reorder
+              </motion.a>
+            </motion.div>
+          )) : (
+            <motion.div variants={stagger.item}
+              style={{ background: "var(--bg-surface)", borderRadius: 14, padding: 18, border: "1px solid var(--border-subtle)" }}>
+              <p style={{ fontSize: 12.5, fontWeight: 500, color: "var(--success)", marginBottom: 7 }}>Stock OK</p>
+              <p style={{ fontSize: 13, color: "var(--text-muted)" }}>All medicines are well stocked.</p>
+            </motion.div>
+          )}
 
+          {/* Quick actions */}
           <motion.div variants={stagger.item}
-            style={{
-              background: "var(--bg-surface)", border: "1px solid var(--border-subtle)",
-              borderRadius: 14, padding: 18,
-            }}>
-            <p style={{ fontSize: 12.5, fontWeight: 500, color: "var(--text-primary)", marginBottom: 12 }}>
-              Quick actions
-            </p>
+            style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)", borderRadius: 14, padding: 18 }}>
+            <p style={{ fontSize: 12.5, fontWeight: 500, color: "var(--text-primary)", marginBottom: 12 }}>Quick actions</p>
             {[
               { l: "Upload prescription", href: "/patient/prescriptions", icon: "ti-upload" },
               { l: "Book follow-up", href: "/patient/profile", icon: "ti-calendar" },
               { l: "Health report", href: "/patient/profile", icon: "ti-file-description" },
             ].map((a, i) => (
-              <motion.a key={i} href={a.href}
-                whileHover={{ x: 3, transition: { duration: 0.15 } }}
+              <motion.a key={i} href={a.href} whileHover={{ x: 3, transition: { duration: 0.15 } }}
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
-                  padding: "10px 2px",
-                  borderBottom: i < 2 ? "1px solid var(--border-subtle)" : "none",
-                  fontSize: 13, color: "var(--text-secondary)", textDecoration: "none",
-                  gap: 8,
+                  padding: "10px 2px", borderBottom: i < 2 ? "1px solid var(--border-subtle)" : "none",
+                  fontSize: 13, color: "var(--text-secondary)", textDecoration: "none", gap: 8,
                 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <i className={`ti ${a.icon}`} style={{ fontSize: 15, color: "var(--text-muted)" }} />
@@ -419,14 +390,10 @@ export default function PatientDashboard() {
             ))}
           </motion.div>
 
+          {/* Follow-up */}
           <motion.div variants={stagger.item}
-            style={{
-              background: "var(--bg-surface)", border: "1px solid var(--border-subtle)",
-              borderRadius: 14, padding: 18,
-            }}>
-            <p style={{ fontSize: 12.5, fontWeight: 500, color: "var(--text-primary)", marginBottom: 14 }}>
-              Next follow-up
-            </p>
+            style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)", borderRadius: 14, padding: 18 }}>
+            <p style={{ fontSize: 12.5, fontWeight: 500, color: "var(--text-primary)", marginBottom: 14 }}>Next follow-up</p>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <div style={{
                 width: 38, height: 38, borderRadius: 8, flexShrink: 0,
