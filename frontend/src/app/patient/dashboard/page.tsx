@@ -19,53 +19,152 @@ const WEEK_DEFAULT = [
 ];
 
 const VITALS = [
-  { label: "Blood pressure", value: "128/82", unit: "mmHg", ok: true },
-  { label: "Blood sugar", value: "142", unit: "mg/dL", ok: false },
-  { label: "Weight", value: "72", unit: "kg", ok: true },
+  { label: "Blood Pressure", value: "128/82", unit: "mmHg", ok: true, trend: "+2", icon: "ti-heart-rate-monitor" },
+  { label: "Blood Sugar", value: "142", unit: "mg/dL", ok: false, trend: "+8", icon: "ti-droplet" },
+  { label: "Weight", value: "72", unit: "kg", ok: true, trend: "-0.5", icon: "ti-scale" },
+  { label: "SpO2", value: "98", unit: "%", ok: true, trend: "stable", icon: "ti-lungs" },
 ];
 
-const stagger = {
-  container: { hidden: {}, show: { transition: { staggerChildren: 0.055 } } },
-  item: {
-    hidden: { opacity: 0, y: 18 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0.16, 1, 0.3, 1] as const } },
-  },
-} as const;
+function LiveClock() {
+  const [time, setTime] = useState("");
+  const [date, setDate] = useState("");
+  useEffect(() => {
+    const update = () => {
+      const now = new Date();
+      setTime(now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true }));
+      setDate(now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" }));
+    };
+    update();
+    const t = setInterval(update, 1000);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <div style={{ textAlign: "right" }}>
+      <div style={{ fontSize: 28, fontWeight: 300, color: "var(--text-primary)", letterSpacing: "-0.03em", lineHeight: 1 }}>
+        {time}
+      </div>
+      <div style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 3 }}>{date}</div>
+    </div>
+  );
+}
 
-function Ring({ value, size = 156 }: { value: number; size?: number }) {
-  const r = size * 0.4;
+function GlassPanel({ children, style, accent }: {
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+  accent?: string;
+}) {
+  return (
+    <div style={{
+      background: "color-mix(in srgb, var(--bg-surface) 80%, transparent)",
+      backdropFilter: "blur(20px)",
+      WebkitBackdropFilter: "blur(20px)",
+      border: `1px solid ${accent ? `color-mix(in srgb, ${accent} 20%, var(--border-subtle))` : "var(--border-subtle)"}`,
+      borderRadius: 20,
+      position: "relative",
+      overflow: "hidden",
+      ...style,
+    }}>
+      {accent && (
+        <div style={{
+          position: "absolute", top: 0, left: 0, right: 0, height: 1,
+          background: `linear-gradient(90deg, transparent, ${accent}60, transparent)`,
+        }} />
+      )}
+      {children}
+    </div>
+  );
+}
+
+function Ring({ value, size = 120 }: { value: number; size?: number }) {
+  const r = size * 0.42;
   const circ = 2 * Math.PI * r;
   const offset = circ - (value / 100) * circ;
   const ref = useRef(null);
   const inView = useInView(ref, { once: true });
-  const color = value >= 80 ? "var(--success)" : value >= 60 ? "var(--warning)" : "var(--danger)";
+  const color = value >= 80 ? "#10b981" : value >= 60 ? "#f59e0b" : "#ef4444";
 
   return (
-    <div ref={ref} style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
+    <div ref={ref} style={{ position: "relative", width: size, height: size }}>
       <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--border-subtle)" strokeWidth="5" />
-        <motion.circle cx={size / 2} cy={size / 2} r={r} fill="none"
-          stroke={color} strokeWidth="5" strokeLinecap="round"
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="6" />
+        <motion.circle cx={size/2} cy={size/2} r={r} fill="none"
+          stroke={color} strokeWidth="6" strokeLinecap="round"
           strokeDasharray={circ}
           initial={{ strokeDashoffset: circ }}
           animate={inView ? { strokeDashoffset: offset } : {}}
-          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
+          transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
         />
       </svg>
-      <div style={{
-        position: "absolute", inset: 0, display: "flex",
-        flexDirection: "column", alignItems: "center", justifyContent: "center",
-      }}>
-        <span style={{ fontSize: 30, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.03em", lineHeight: 1 }}>
-          {value}<span style={{ fontSize: 15, color: "var(--text-muted)", fontWeight: 400 }}>%</span>
+      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+        <span style={{ fontSize: 22, fontWeight: 600, color, lineHeight: 1, letterSpacing: "-0.02em" }}>
+          {value}%
         </span>
       </div>
     </div>
   );
 }
 
-function Divider() {
-  return <div style={{ height: 1, background: "var(--border-subtle)", margin: "0 -22px" }} />;
+function DoseTimeline({ meds }: { meds: any[] }) {
+  const slots = [
+    { time: "8:00 AM", label: "Morning" },
+    { time: "9:00 AM", label: "Morning" },
+    { time: "2:00 PM", label: "Afternoon" },
+    { time: "9:00 PM", label: "Evening" },
+  ];
+
+  return (
+    <div style={{ position: "relative", padding: "8px 0" }}>
+      <div style={{
+        position: "absolute", top: "50%", left: 0, right: 0, height: 1,
+        background: "var(--border-subtle)", transform: "translateY(-50%)",
+      }} />
+      <div style={{ display: "flex", justifyContent: "space-between", position: "relative" }}>
+        {slots.map((slot, i) => {
+          const med = meds.find(m => m.time === slot.time);
+          const status = !med ? "empty" : med.taken ? "taken" : "pending";
+          return (
+            <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+              <div style={{ fontSize: 10, color: "var(--text-muted)" }}>{slot.time}</div>
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.3 + i * 0.1, type: "spring" }}
+                style={{
+                  width: 32, height: 32, borderRadius: "50%",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: status === "taken"
+                    ? "color-mix(in srgb, #10b981 20%, transparent)"
+                    : status === "pending"
+                    ? "color-mix(in srgb, #6366f1 20%, transparent)"
+                    : "var(--bg-overlay)",
+                  border: status === "taken"
+                    ? "1px solid #10b98150"
+                    : status === "pending"
+                    ? "1px solid #6366f150"
+                    : "1px solid var(--border-subtle)",
+                  position: "relative", zIndex: 1,
+                }}>
+                {status === "taken" && <i className="ti ti-check" style={{ fontSize: 14, color: "#10b981" }} />}
+                {status === "pending" && (
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    style={{ width: 8, height: 8, borderRadius: "50%", background: "#6366f1" }}
+                  />
+                )}
+                {status === "empty" && <div style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--border-subtle)" }} />}
+              </motion.div>
+              {med && (
+                <div style={{ fontSize: 9.5, color: status === "taken" ? "#10b981" : "var(--text-muted)", textAlign: "center", maxWidth: 60 }}>
+                  {med.name}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 export default function PatientDashboard() {
@@ -80,7 +179,6 @@ export default function PatientDashboard() {
     setUser(authService.getUser());
     const hour = new Date().getHours();
     setGreeting(hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening");
-
     const timer = setTimeout(async () => {
       const token = authService.getToken();
       if (!token) return;
@@ -97,7 +195,6 @@ export default function PatientDashboard() {
         console.error("Patient API error:", err);
       }
     }, 100);
-
     return () => clearTimeout(timer);
   }, []);
 
@@ -115,178 +212,203 @@ export default function PatientDashboard() {
   const taken = meds.filter(m => m.taken).length;
   const total = meds.length;
   const nextDose = meds.find(m => !m.taken);
-  const name = user?.full_name?.split(" ")[0] ?? "";
-  const dateStr = new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" });
   const lowStock = stockData.filter((s: any) => s.days_left <= 7);
+  const healthScore = Math.round((adherence * 0.6) + (VITALS.filter(v => v.ok).length / VITALS.length * 40));
+  const name = user?.full_name?.split(" ")[0] ?? "";
 
   return (
-    <motion.div variants={stagger.container} initial="hidden" animate="show"
-      style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 16, position: "relative" }}>
 
-      {/* Header */}
-      <motion.div variants={stagger.item}
-        style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+      {/* ── TOP HEADER ── */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
         <div>
-          <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 5 }}>{dateStr}</p>
-          <h1 style={{ fontSize: 26, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.025em" }}>
-            {greeting}{name ? `, ${name}` : ""}
+          <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4 }}>{greeting}</p>
+          <h1 style={{ fontSize: 24, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.025em" }}>
+            {name || "Patient"} <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>/ Overview</span>
           </h1>
         </div>
-        <div style={{
-          display: "flex", alignItems: "center", gap: 10,
-          padding: "9px 14px", borderRadius: 10,
-          background: "var(--bg-surface)", border: "1px solid var(--border-subtle)",
-        }}>
-          <div style={{ display: "flex", gap: 3, alignItems: "flex-end" }}>
-            {[8, 12, 16, 14, 18].map((h, i) => (
-              <motion.div key={i}
-                initial={{ height: 0 }} animate={{ height: h }}
-                transition={{ delay: 0.6 + i * 0.06, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                style={{ width: 3, borderRadius: 2, background: i < streak ? "var(--accent-primary)" : "var(--border-subtle)" }}
-              />
-            ))}
-          </div>
-          <span style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)" }}>
-            {streak}-day streak
-          </span>
-        </div>
+        <LiveClock />
       </motion.div>
 
-      {/* Hero next dose */}
-      {nextDose && (
-        <motion.div variants={stagger.item}
-          style={{
-            background: "var(--bg-surface)", border: "1px solid var(--border-subtle)",
-            borderRadius: 16, padding: "22px 24px",
-            display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20,
-            position: "relative", overflow: "hidden",
-          }}>
-          <div style={{
-            position: "absolute", inset: 0, pointerEvents: "none",
-            background: "linear-gradient(105deg, color-mix(in srgb, var(--accent-primary) 5%, transparent) 0%, transparent 50%)",
-          }} />
-          <div style={{ display: "flex", alignItems: "center", gap: 18, position: "relative" }}>
-            <div style={{
-              width: 46, height: 46, borderRadius: 12, flexShrink: 0,
-              background: "color-mix(in srgb, var(--accent-primary) 10%, transparent)",
-              border: "1px solid color-mix(in srgb, var(--accent-primary) 18%, transparent)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <i className="ti ti-clock" style={{ fontSize: 20, color: "var(--accent-primary)" }} />
-            </div>
-            <div>
-              <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 4 }}>Next dose</p>
-              <p style={{ fontSize: 17, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>
-                {nextDose.name} <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>{nextDose.dosage}</span>
-              </p>
-              <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 2 }}>{nextDose.time}</p>
-            </div>
-          </div>
-          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-            onClick={() => { const i = meds.findIndex(m => !m.taken); if (i !== -1) markTaken(i); }}
-            style={{
-              padding: "11px 22px", borderRadius: 10, fontSize: 13.5,
-              fontWeight: 500, border: "none", cursor: "pointer",
-              background: "var(--text-primary)", color: "var(--bg-page)", flexShrink: 0,
-            }}>
-            Mark taken
-          </motion.button>
-        </motion.div>
-      )}
+      {/* ── ROW 1: Health Score + Next Dose + Streak ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "200px 1fr 200px", gap: 14 }} className="pg-row1">
 
-      {/* Stat strip */}
-      <motion.div variants={stagger.item}
-        style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}
-        className="patient-stat-grid">
-        {[
-          { l: "Doses today", v: total > 0 ? `${taken}/${total}` : "—" },
-          { l: "This week", v: `${adherenceData?.week?.filter((w: any) => w.p === 100).length ?? 0}/7` },
-          { l: "All time", v: `${adherence}%` },
-          { l: "Stock runs out", v: lowStock[0] ? `${lowStock[0].days_left} days` : "OK", danger: lowStock.length > 0 },
-        ].map((s, i) => (
-          <motion.div key={i} whileHover={{ y: -2, transition: { duration: 0.18 } }}
-            style={{
-              background: "var(--bg-surface)", border: "1px solid var(--border-subtle)",
-              borderRadius: 12, padding: "14px 16px",
-            }}>
-            <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 7 }}>{s.l}</p>
-            <p style={{ fontSize: 20, fontWeight: 600, letterSpacing: "-0.02em", color: (s as any).danger ? "var(--danger)" : "var(--text-primary)" }}>
-              {s.v}
+        {/* Health Score */}
+        <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.05 }}>
+          <GlassPanel accent="#6366f1" style={{ padding: 20, height: "100%" }}>
+            <p style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 14, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+              Health Score
             </p>
-          </motion.div>
-        ))}
-      </motion.div>
-
-      {/* Main grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "300px 1fr 268px", gap: 14 }} className="patient-main-grid">
-
-        {/* Adherence */}
-        <motion.div variants={stagger.item}
-          style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)", borderRadius: 16, padding: "22px" }}>
-          <p style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 20 }}>Adherence</p>
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 22 }}>
-            <Ring value={adherence} />
-          </div>
-          <div style={{ display: "flex", gap: 5, alignItems: "flex-end", marginBottom: 20 }}>
-            {weekData.map((day: any, i: number) => {
-              const isToday = i === 6;
-              const fill = day.p === 100 ? "var(--success)" : day.p >= 66 ? "var(--warning)" : "var(--danger)";
-              return (
-                <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
-                  <div style={{ width: "100%", maxWidth: 24, height: 40, borderRadius: 3, background: "var(--border-subtle)", position: "relative", overflow: "hidden" }}>
-                    <motion.div initial={{ height: 0 }} animate={{ height: `${day.p}%` }}
-                      transition={{ delay: 0.5 + i * 0.04, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                      style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: fill, opacity: isToday ? 1 : 0.5 }}
-                    />
-                  </div>
-                  <span style={{ fontSize: 10, color: isToday ? "var(--text-primary)" : "var(--text-muted)", fontWeight: isToday ? 600 : 400 }}>
-                    {day.d}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-          <Divider />
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 14 }}>
-            <div>
-              <p style={{ fontSize: 17, fontWeight: 600, color: "var(--text-primary)" }}>{adherenceData?.taken_total ?? 52}</p>
-              <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>taken</p>
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <Ring value={healthScore} size={80} />
+              <div>
+                <p style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 4 }}>Overall</p>
+                <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.4 }}>
+                  {healthScore >= 80 ? "Excellent" : healthScore >= 60 ? "Good" : "Needs attention"}
+                </p>
+              </div>
             </div>
-            <div>
-              <p style={{ fontSize: 17, fontWeight: 600, color: "var(--text-primary)" }}>{adherenceData?.missed_total ?? 8}</p>
-              <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>missed</p>
-            </div>
-          </div>
+          </GlassPanel>
         </motion.div>
 
-        {/* Medicines + Vitals */}
-        <motion.div variants={stagger.item}
-          style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)", borderRadius: 16, padding: "22px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-            <p style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)" }}>Today's medicines</p>
-            <p style={{ fontSize: 12.5, color: "var(--text-muted)" }}>{taken} of {total} taken</p>
-          </div>
-          <div>
-            <AnimatePresence>
-              {meds.map((med, i) => (
-                <motion.div key={i} layout
-                  style={{
-                    display: "flex", alignItems: "center", gap: 14, padding: "13px 0",
-                    borderBottom: i < meds.length - 1 ? "1px solid var(--border-subtle)" : "none",
+        {/* Next Dose Hero */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
+          <GlassPanel accent="#6366f1" style={{ padding: "18px 24px" }}>
+            <div style={{
+              position: "absolute", inset: 0, pointerEvents: "none",
+              background: "linear-gradient(135deg, color-mix(in srgb, #6366f1 8%, transparent) 0%, transparent 60%)",
+            }} />
+            {nextDose ? (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20, position: "relative" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                  <div style={{
+                    width: 48, height: 48, borderRadius: 14, flexShrink: 0,
+                    background: "color-mix(in srgb, #6366f1 15%, transparent)",
+                    border: "1px solid color-mix(in srgb, #6366f1 25%, transparent)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
                   }}>
-                  <div style={{ width: 3, height: 28, borderRadius: 2, flexShrink: 0, background: med.color, opacity: med.taken ? 0.35 : 1, transition: "opacity 0.3s" }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: 13.5, fontWeight: 500, color: "var(--text-primary)", marginBottom: 2 }}>
-                      {med.name} <span style={{ fontSize: 12.5, color: "var(--text-muted)", fontWeight: 400 }}>{med.dosage}</span>
+                    <i className="ti ti-pill" style={{ fontSize: 22, color: "#6366f1" }} />
+                  </div>
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                      <span style={{
+                        fontSize: 10, padding: "2px 8px", borderRadius: 6,
+                        background: "color-mix(in srgb, #f59e0b 15%, transparent)",
+                        color: "#f59e0b", fontWeight: 600, letterSpacing: "0.04em"
+                      }}>DUE</span>
+                      <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Next dose</span>
+                    </div>
+                    <p style={{ fontSize: 20, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
+                      {nextDose.name} <span style={{ color: "var(--text-muted)", fontWeight: 400, fontSize: 15 }}>{nextDose.dosage}</span>
                     </p>
-                    <p style={{ fontSize: 12, color: "var(--text-muted)" }}>{med.time}</p>
+                    <p style={{ fontSize: 12.5, color: "var(--text-muted)", marginTop: 2 }}>{nextDose.time}</p>
+                  </div>
+                </div>
+                <motion.button
+                  whileHover={{ scale: 1.04, boxShadow: "0 8px 24px rgba(99,102,241,0.3)" }}
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => { const i = meds.findIndex(m => !m.taken); if (i !== -1) markTaken(i); }}
+                  style={{
+                    padding: "12px 24px", borderRadius: 12, fontSize: 13.5,
+                    fontWeight: 600, border: "none", cursor: "pointer",
+                    background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                    color: "#fff", flexShrink: 0,
+                    boxShadow: "0 4px 16px rgba(99,102,241,0.25)",
+                  }}>
+                  Mark taken
+                </motion.button>
+              </div>
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 12, background: "color-mix(in srgb, #10b981 15%, transparent)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <i className="ti ti-check" style={{ fontSize: 20, color: "#10b981" }} />
+                </div>
+                <div>
+                  <p style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)" }}>All doses taken</p>
+                  <p style={{ fontSize: 12, color: "var(--text-muted)" }}>Great job today!</p>
+                </div>
+              </div>
+            )}
+          </GlassPanel>
+        </motion.div>
+
+        {/* Streak */}
+        <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }}>
+          <GlassPanel accent="#f59e0b" style={{ padding: 20, height: "100%" }}>
+            <p style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 14, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+              Streak
+            </p>
+            <div style={{ fontSize: 36, fontWeight: 700, color: "#f59e0b", letterSpacing: "-0.03em", lineHeight: 1, marginBottom: 6 }}>
+              {streak}
+              <span style={{ fontSize: 14, fontWeight: 400, color: "var(--text-muted)", marginLeft: 4 }}>days</span>
+            </div>
+            <div style={{ display: "flex", gap: 4, marginTop: 10 }}>
+              {Array.from({ length: 7 }).map((_, i) => (
+                <motion.div key={i}
+                  initial={{ scaleY: 0 }} animate={{ scaleY: 1 }}
+                  transition={{ delay: 0.5 + i * 0.06, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                  style={{
+                    flex: 1, height: 20, borderRadius: 3,
+                    background: i < streak ? "color-mix(in srgb, #f59e0b 60%, transparent)" : "var(--border-subtle)",
+                    transformOrigin: "bottom",
+                  }}
+                />
+              ))}
+            </div>
+          </GlassPanel>
+        </motion.div>
+      </div>
+
+      {/* ── ROW 2: Dose Timeline ── */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
+        <GlassPanel style={{ padding: "16px 24px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+            <p style={{ fontSize: 12.5, fontWeight: 500, color: "var(--text-primary)" }}>Today's dose schedule</p>
+            <span style={{ fontSize: 11.5, color: "var(--text-muted)" }}>{taken} of {total} taken</span>
+          </div>
+          <DoseTimeline meds={meds} />
+        </GlassPanel>
+      </motion.div>
+
+      {/* ── ROW 3: Main grid ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 280px", gap: 14 }} className="pg-row3">
+
+        {/* Medicines */}
+        <motion.div initial={{ opacity: 0, x: -14 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.15 }}>
+          <GlassPanel style={{ padding: "20px 22px", height: "100%" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+              <p style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)" }}>Medicines</p>
+              <span style={{
+                fontSize: 10.5, padding: "3px 10px", borderRadius: 20,
+                background: "color-mix(in srgb, #6366f1 12%, transparent)",
+                color: "#6366f1", fontWeight: 500
+              }}>{total} active</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {meds.map((med, i) => (
+                <motion.div key={i}
+                  layout
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 + i * 0.06 }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 12,
+                    padding: "12px 14px", borderRadius: 14,
+                    background: med.taken
+                      ? "color-mix(in srgb, #10b981 6%, var(--bg-overlay))"
+                      : "var(--bg-overlay)",
+                    border: `1px solid ${med.taken ? "color-mix(in srgb, #10b981 15%, transparent)" : "var(--border-subtle)"}`,
+                    transition: "all 0.3s",
+                  }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                    background: `color-mix(in srgb, ${med.color} 15%, transparent)`,
+                    border: `1px solid color-mix(in srgb, ${med.color} 20%, transparent)`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    <i className="ti ti-pill" style={{ fontSize: 16, color: med.color }} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 2 }}>
+                      {med.name} <span style={{ fontSize: 11.5, color: "var(--text-muted)", fontWeight: 400 }}>{med.dosage}</span>
+                    </p>
+                    <p style={{ fontSize: 11.5, color: "var(--text-muted)" }}>{med.time}</p>
                   </div>
                   <AnimatePresence mode="wait">
                     {med.taken ? (
-                      <motion.span key="taken" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
-                        style={{ fontSize: 12, color: "var(--success)", fontWeight: 500 }}>Taken</motion.span>
+                      <motion.div key="done" initial={{ scale: 0 }} animate={{ scale: 1 }}
+                        style={{
+                          width: 28, height: 28, borderRadius: "50%",
+                          background: "color-mix(in srgb, #10b981 15%, transparent)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                        }}>
+                        <i className="ti ti-check" style={{ fontSize: 14, color: "#10b981" }} />
+                      </motion.div>
                     ) : confirming === i ? (
-                      <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: "flex", gap: 3 }}>
+                      <motion.div key="load" style={{ display: "flex", gap: 3 }}>
                         {[0, 1, 2].map(d => (
                           <motion.div key={d} animate={{ y: [0, -4, 0] }}
                             transition={{ duration: 0.5, repeat: Infinity, delay: d * 0.1 }}
@@ -294,132 +416,165 @@ export default function PatientDashboard() {
                         ))}
                       </motion.div>
                     ) : (
-                      <motion.button key="btn" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                        whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.96 }}
+                      <motion.button key="btn"
+                        whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
                         onClick={() => markTaken(i)}
                         style={{
-                          padding: "7px 14px", borderRadius: 8, fontSize: 12.5, fontWeight: 500,
-                          border: "1px solid var(--border-default)", background: "transparent",
-                          color: "var(--text-secondary)", cursor: "pointer", flexShrink: 0,
+                          padding: "6px 14px", borderRadius: 8, fontSize: 12,
+                          fontWeight: 500, border: "1px solid var(--border-default)",
+                          background: "transparent", color: "var(--text-secondary)", cursor: "pointer",
                         }}>
-                        Mark taken
+                        Take
                       </motion.button>
                     )}
                   </AnimatePresence>
                 </motion.div>
               ))}
-            </AnimatePresence>
-          </div>
-          <Divider />
-          <div style={{ marginTop: 18 }}>
-            <p style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 12 }}>Latest vitals</p>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
-              {VITALS.map((v, i) => (
-                <motion.div key={i} whileHover={{ y: -2, transition: { duration: 0.15 } }}
-                  style={{ padding: "12px 14px", borderRadius: 10, background: "var(--bg-overlay)", border: "1px solid var(--border-subtle)" }}>
-                  <p style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>
-                    {v.value} <span style={{ fontSize: 10.5, color: "var(--text-muted)", fontWeight: 400 }}>{v.unit}</span>
-                  </p>
-                  <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>{v.label}</p>
-                  <div style={{
-                    display: "inline-block", marginTop: 6, fontSize: 10, padding: "2px 7px", borderRadius: 4,
-                    background: v.ok ? "color-mix(in srgb, var(--success) 12%, transparent)" : "color-mix(in srgb, var(--warning) 12%, transparent)",
-                    color: v.ok ? "var(--success)" : "var(--warning)",
-                  }}>
-                    {v.ok ? "Normal" : "Watch"}
-                  </div>
-                </motion.div>
-              ))}
             </div>
-          </div>
+          </GlassPanel>
+        </motion.div>
+
+        {/* Adherence + Week */}
+        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.17 }}>
+          <GlassPanel style={{ padding: "20px 22px", height: "100%" }}>
+            <p style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 20 }}>Adherence</p>
+            <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 24 }}>
+              <Ring value={adherence} size={100} />
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <div>
+                  <p style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 2 }}>Taken</p>
+                  <p style={{ fontSize: 18, fontWeight: 600, color: "var(--text-primary)" }}>{adherenceData?.taken_total ?? 52}</p>
+                </div>
+                <div>
+                  <p style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 2 }}>Missed</p>
+                  <p style={{ fontSize: 18, fontWeight: 600, color: "var(--text-primary)" }}>{adherenceData?.missed_total ?? 8}</p>
+                </div>
+              </div>
+            </div>
+            <div style={{ height: 1, background: "var(--border-subtle)", margin: "0 -22px 18px" }} />
+            <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 12 }}>This week</p>
+            <div style={{ display: "flex", gap: 6, alignItems: "flex-end" }}>
+              {weekData.map((day: any, i: number) => {
+                const isToday = i === 6;
+                const fill = day.p === 100 ? "#10b981" : day.p >= 66 ? "#f59e0b" : "#ef4444";
+                return (
+                  <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
+                    <div style={{ width: "100%", maxWidth: 28, height: 48, borderRadius: 4, background: "var(--bg-overlay)", position: "relative", overflow: "hidden", border: isToday ? `1px solid ${fill}40` : "none" }}>
+                      <motion.div initial={{ height: 0 }} animate={{ height: `${day.p}%` }}
+                        transition={{ delay: 0.5 + i * 0.05, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                        style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: fill, opacity: isToday ? 1 : 0.55 }}
+                      />
+                    </div>
+                    <span style={{ fontSize: 10, color: isToday ? "var(--text-primary)" : "var(--text-muted)", fontWeight: isToday ? 600 : 400 }}>
+                      {day.d}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </GlassPanel>
         </motion.div>
 
         {/* Right sidebar */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
 
-          {/* Stock alert — real data */}
-          {lowStock.length > 0 ? lowStock.map((s: any, i: number) => (
-            <motion.div key={i} variants={stagger.item}
-              style={{
-                background: "var(--bg-surface)", borderRadius: 14, padding: 18,
-                border: "1px solid color-mix(in srgb, var(--danger) 22%, var(--border-subtle))",
-              }}>
-              <p style={{ fontSize: 12.5, fontWeight: 500, color: "var(--danger)", marginBottom: 7 }}>Stock running low</p>
-              <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.55, marginBottom: 14 }}>
-                {s.name} runs out in <strong style={{ color: "var(--text-primary)" }}>{s.days_left} days</strong>.
-              </p>
-              <motion.a href={`https://pharmeasy.in/search/all?name=${s.name}`} target="_blank"
-                whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-                style={{
-                  display: "block", textAlign: "center", padding: "10px", borderRadius: 9,
-                  fontSize: 13, fontWeight: 500, background: "var(--text-primary)",
-                  color: "var(--bg-page)", textDecoration: "none",
-                }}>
-                Reorder
-              </motion.a>
-            </motion.div>
-          )) : (
-            <motion.div variants={stagger.item}
-              style={{ background: "var(--bg-surface)", borderRadius: 14, padding: 18, border: "1px solid var(--border-subtle)" }}>
-              <p style={{ fontSize: 12.5, fontWeight: 500, color: "var(--success)", marginBottom: 7 }}>Stock OK</p>
-              <p style={{ fontSize: 13, color: "var(--text-muted)" }}>All medicines are well stocked.</p>
+          {/* Vitals */}
+          <motion.div initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.19 }}>
+            <GlassPanel style={{ padding: "18px 20px" }}>
+              <p style={{ fontSize: 12.5, fontWeight: 500, color: "var(--text-primary)", marginBottom: 14 }}>Vitals</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {VITALS.map((v, i) => (
+                  <div key={i} style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "10px 12px", borderRadius: 10,
+                    background: "var(--bg-overlay)",
+                    border: "1px solid var(--border-subtle)",
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <i className={`ti ${v.icon}`} style={{ fontSize: 14, color: v.ok ? "#10b981" : "#f59e0b" }} />
+                      <div>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>{v.value}</p>
+                        <p style={{ fontSize: 10, color: "var(--text-muted)" }}>{v.label}</p>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <span style={{
+                        fontSize: 10, padding: "2px 7px", borderRadius: 5,
+                        background: v.ok ? "color-mix(in srgb, #10b981 12%, transparent)" : "color-mix(in srgb, #f59e0b 12%, transparent)",
+                        color: v.ok ? "#10b981" : "#f59e0b",
+                      }}>{v.ok ? "Normal" : "Watch"}</span>
+                      <p style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 2 }}>{v.trend}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </GlassPanel>
+          </motion.div>
+
+          {/* Stock */}
+          {lowStock.length > 0 && (
+            <motion.div initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.22 }}>
+              <GlassPanel accent="#ef4444" style={{ padding: "16px 18px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                  <motion.div animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 2, repeat: Infinity }}
+                    style={{ width: 7, height: 7, borderRadius: "50%", background: "#ef4444" }} />
+                  <p style={{ fontSize: 12, fontWeight: 600, color: "#ef4444" }}>Stock Alert</p>
+                </div>
+                {lowStock.map((s: any, i: number) => (
+                  <div key={i} style={{ marginBottom: 12 }}>
+                    <p style={{ fontSize: 12.5, color: "var(--text-secondary)", lineHeight: 1.5, marginBottom: 10 }}>
+                      <strong style={{ color: "var(--text-primary)" }}>{s.name}</strong> runs out in {s.days_left} days
+                    </p>
+                    <motion.a href={`https://pharmeasy.in/search/all?name=${s.name}`} target="_blank"
+                      whileHover={{ scale: 1.02 }}
+                      style={{
+                        display: "block", textAlign: "center", padding: "9px",
+                        borderRadius: 9, fontSize: 12.5, fontWeight: 500,
+                        background: "#ef4444", color: "#fff", textDecoration: "none",
+                      }}>
+                      Reorder now
+                    </motion.a>
+                  </div>
+                ))}
+              </GlassPanel>
             </motion.div>
           )}
 
-          {/* Quick actions */}
-          <motion.div variants={stagger.item}
-            style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)", borderRadius: 14, padding: 18 }}>
-            <p style={{ fontSize: 12.5, fontWeight: 500, color: "var(--text-primary)", marginBottom: 12 }}>Quick actions</p>
-            {[
-              { l: "Upload prescription", href: "/patient/prescriptions", icon: "ti-upload" },
-              { l: "Book follow-up", href: "/patient/profile", icon: "ti-calendar" },
-              { l: "Health report", href: "/patient/profile", icon: "ti-file-description" },
-            ].map((a, i) => (
-              <motion.a key={i} href={a.href} whileHover={{ x: 3, transition: { duration: 0.15 } }}
-                style={{
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                  padding: "10px 2px", borderBottom: i < 2 ? "1px solid var(--border-subtle)" : "none",
-                  fontSize: 13, color: "var(--text-secondary)", textDecoration: "none", gap: 8,
+          {/* Follow up */}
+          <motion.div initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.24 }}>
+            <GlassPanel style={{ padding: "16px 18px" }}>
+              <p style={{ fontSize: 12, fontWeight: 500, color: "var(--text-primary)", marginBottom: 12 }}>Next follow-up</p>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{
+                  width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                  background: "color-mix(in srgb, #6366f1 12%, transparent)",
+                  border: "1px solid color-mix(in srgb, #6366f1 20%, transparent)",
+                  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <i className={`ti ${a.icon}`} style={{ fontSize: 15, color: "var(--text-muted)" }} />
-                  {a.l}
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "#6366f1", lineHeight: 1 }}>22</span>
+                  <span style={{ fontSize: 8, color: "#6366f1", letterSpacing: "0.06em" }}>JUN</span>
                 </div>
-                <i className="ti ti-arrow-right" style={{ fontSize: 13, color: "var(--text-muted)", flexShrink: 0 }} />
-              </motion.a>
-            ))}
-          </motion.div>
-
-          {/* Follow-up */}
-          <motion.div variants={stagger.item}
-            style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)", borderRadius: 14, padding: 18 }}>
-            <p style={{ fontSize: 12.5, fontWeight: 500, color: "var(--text-primary)", marginBottom: 14 }}>Next follow-up</p>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{
-                width: 38, height: 38, borderRadius: 8, flexShrink: 0,
-                background: "var(--bg-overlay)", border: "1px solid var(--border-subtle)",
-                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-              }}>
-                <span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--text-primary)", lineHeight: 1 }}>22</span>
-                <span style={{ fontSize: 8.5, color: "var(--text-muted)", letterSpacing: "0.04em" }}>JUN</span>
+                <div>
+                  <p style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)" }}>Dr. Priya Mehta</p>
+                  <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginTop: 2 }}>In 3 days · 10:00 AM</p>
+                </div>
               </div>
-              <div>
-                <p style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)" }}>Dr. Priya Mehta</p>
-                <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>In 3 days</p>
-              </div>
-            </div>
+            </GlassPanel>
           </motion.div>
         </div>
       </div>
 
       <style jsx global>{`
-        @media (max-width: 1100px) {
-          .patient-main-grid { grid-template-columns: 1fr !important; }
+        @media (max-width: 1200px) {
+          .pg-row3 { grid-template-columns: 1fr 1fr !important; }
+          .pg-row3 > div:last-child { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
         }
-        @media (max-width: 640px) {
-          .patient-stat-grid { grid-template-columns: 1fr 1fr !important; }
+        @media (max-width: 900px) {
+          .pg-row1 { grid-template-columns: 1fr !important; }
+          .pg-row3 { grid-template-columns: 1fr !important; }
+          .pg-row3 > div:last-child { grid-template-columns: 1fr !important; }
         }
       `}</style>
-    </motion.div>
+    </div>
   );
 }
