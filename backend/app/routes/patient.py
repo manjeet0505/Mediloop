@@ -11,14 +11,14 @@ async def get_my_profile(
     current_user=Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    if current_user.role.value != "patient":
+    if current_user.role != "patient":
         raise HTTPException(status_code=403, detail="Patient access only")
     return {
         "id": str(current_user.id),
         "full_name": current_user.full_name,
         "email": current_user.email,
         "phone": current_user.phone,
-        "role": current_user.role.value,
+        "role": current_user.role,
     }
 
 @router.get("/me/medicines")
@@ -26,7 +26,7 @@ async def get_my_medicines(
     current_user=Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    if current_user.role.value != "patient":
+    if current_user.role != "patient":
         raise HTTPException(status_code=403, detail="Patient access only")
     return [
         {"id": "1", "name": "Metformin", "dosage": "500mg", "time": "9:00 AM", "taken": False, "color": "#6366f1"},
@@ -40,7 +40,7 @@ async def confirm_dose(
     current_user=Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    if current_user.role.value != "patient":
+    if current_user.role != "patient":
         raise HTTPException(status_code=403, detail="Patient access only")
     return {"confirmed": True, "medicine_id": medicine_id}
 
@@ -49,7 +49,7 @@ async def get_adherence(
     current_user=Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    if current_user.role.value != "patient":
+    if current_user.role != "patient":
         raise HTTPException(status_code=403, detail="Patient access only")
     return {
         "overall": 87,
@@ -67,7 +67,7 @@ async def get_stock(
     current_user=Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    if current_user.role.value != "patient":
+    if current_user.role != "patient":
         raise HTTPException(status_code=403, detail="Patient access only")
     return [
         {"name": "Metformin", "dosage": "500mg", "remaining": 10, "total": 60, "days_left": 2, "color": "#6366f1"},
