@@ -89,11 +89,12 @@ export function Navbar() {
 
           {loggedIn ? (
             <div className="flex items-center gap-2">
-              <MagneticButton href="/dashboard"
-                className="hidden md:block px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer"
-                style={{ background: "var(--accent-gradient)", color: "var(--text-inverse)" }}>
-                Dashboard →
-              </MagneticButton>
+              <MagneticButton
+  href={user?.role === "patient" ? "/patient/dashboard" : "/dashboard"}
+  className="hidden md:block px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer"
+  style={{ background: "var(--accent-gradient)", color: "var(--text-inverse)" }}>
+  Dashboard →
+</MagneticButton>
               <motion.button
                 whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                 onClick={() => authService.logout()}
