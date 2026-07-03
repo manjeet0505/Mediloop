@@ -298,8 +298,8 @@ export default function PatientDashboard() {
   const name = user?.full_name?.split(" ")[0] ?? "";
 
   const stockDisplay = stockData.length > 0 ? stockData : [
-    { name: "Metformin", remaining: 10, total: 60, color: "#6366f1", days_left: 2 },
-    { name: "Amlodipine", remaining: 45, total: 60, color: "#06b6d4", days_left: 45 },
+    { name: "Metformin", remaining: 10, qty: 60, color: "#6366f1", days_left: 2 },
+    { name: "Amlodipine", remaining: 45, qty: 60, color: "#06b6d4", days_left: 45 },
   ];
 
   return (
@@ -430,7 +430,7 @@ export default function PatientDashboard() {
           { l: "Doses today", v: total > 0 ? `${taken}/${total}` : "—", accent: "#6366f1" },
           { l: "This week", v: `${adherenceData?.week?.filter((w: any) => w.p === 100).length ?? 3}/7 days`, accent: "#10b981" },
           { l: "All time adherence", v: `${adherence}%`, accent: "#8b5cf6" },
-          { l: "Stock critical", v: lowStock.length > 0 ? `${lowStock[0].days_left} days`, accent: "#ef4444", danger: true },
+          { l: "Stock critical", v: lowStock.length > 0 ? `${lowStock[0].days_left} days` : "OK", accent: "#ef4444", danger: true },
         ].map((s, i) => (
           <Glass key={i} hover accent={s.danger ? "#ef4444" : undefined} style={{ padding: "14px 18px" }}>
             <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginBottom: 8 }}>{s.l}</p>
@@ -641,8 +641,8 @@ export default function PatientDashboard() {
               )}
             </div>
             {stockDisplay.map((s: any, i: number) => (
-              <StockBar key={i} name={s.name} remaining={s.remaining} total={s.total} color={s.color} daysLeft={s.days_left} />
-            ))}
+  <StockBar key={i} name={s.name} remaining={s.remaining} total={s.qty ?? s.total} color={s.color} daysLeft={s.days_left} />
+))}
             {lowStock.length > 0 && (
               <motion.a href={`https://pharmeasy.in/search/all?name=${lowStock[0].name}`} target="_blank"
                 whileHover={{ scale: 1.02, boxShadow: "0 8px 24px rgba(239,68,68,0.3)" }}
