@@ -16,7 +16,7 @@ function useMesh() {
   return nodes;
 }
 
-export default function AmbientBackground({ accent = "#6366f1" }: { accent?: string }) {
+export default function AmbientBackground({ accent = "#6366f1", glowY = 30 }: { accent?: string; glowY?: number }) {
   const nodes = useMesh();
 
   // connect nearby nodes only (avoid spider-web clutter)
@@ -31,10 +31,24 @@ export default function AmbientBackground({ accent = "#6366f1" }: { accent?: str
   }
 
   return (
+  <div style={{
+    position: "fixed", inset: 0, zIndex: 0,
+    pointerEvents: "none", overflow: "hidden",
+  }}>
+    {/* Focused radial glow — sits behind hero/next-dose area */}
     <div style={{
-      position: "fixed", inset: 0, zIndex: 0,
-      pointerEvents: "none", overflow: "hidden",
-    }}>
+      position: "absolute",
+      top: `${glowY}%`,
+      left: "50%",
+      transform: "translate(-50%, -50%)",
+      width: 900,
+      height: 500,
+      background: `radial-gradient(ellipse at center, ${accent}22 0%, ${accent}0a 40%, transparent 70%)`,
+      filter: "blur(40px)",
+    }} />
+
+    {/* Neural mesh */}
+    ...
       {/* Neural mesh */}
       <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none"
         style={{ position: "absolute", inset: 0, opacity: 0.35 }}>

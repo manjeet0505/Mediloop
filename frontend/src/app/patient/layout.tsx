@@ -101,7 +101,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
 
   return (
     <div style={{ minHeight: "100vh", background: "#000", color: "#e8e8e8", fontFamily: "-apple-system, 'Inter', sans-serif" }}>
-     <AmbientBackground accent="#6366f1" />
+     <AmbientBackground accent="#6366f1" glowY={22} />
       {/* Top nav */}
       <header style={{
         position: "sticky", top: 0, zIndex: 20,
