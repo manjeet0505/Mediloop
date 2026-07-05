@@ -3,6 +3,8 @@ import { useEffect, useState, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { authService } from "@/lib/auth";
+import AmbientBackground from "@/components/patient/AmbientBackground";
+import AgentConsole from "@/components/patient/AgentConsole";
 
 const NAV_ITEMS = [
   { label: "Overview", href: "/patient/dashboard" },
@@ -99,7 +101,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
 
   return (
     <div style={{ minHeight: "100vh", background: "#000", color: "#e8e8e8", fontFamily: "-apple-system, 'Inter', sans-serif" }}>
-
+     <AmbientBackground accent="#6366f1" />
       {/* Top nav */}
       <header style={{
         position: "sticky", top: 0, zIndex: 20,
@@ -159,10 +161,19 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
             <ProfileMenu user={user} />
           </div>
         </div>
+
+        <div style={{
+          maxWidth: 1100, margin: "0 auto", padding: "0 32px 10px",
+          borderTop: "1px solid #0d0d0d",
+        }}>
+          <div style={{ paddingTop: 8 }}>
+            <AgentConsole />
+          </div>
+        </div>
       </header>
 
       {/* Page */}
-      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "48px 32px 80px" }}>
+      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "48px 32px 80px", position: "relative", zIndex: 1 }}>
         <AnimatePresence mode="wait">
           <motion.div key={pathname}
             initial={{ opacity: 0, y: 8 }}
