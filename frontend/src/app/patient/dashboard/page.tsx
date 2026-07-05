@@ -353,9 +353,24 @@ export default function PatientDashboard() {
             <h2 style={{ fontSize: 13, color: "#666", fontWeight: 400, letterSpacing: "0.02em", marginBottom: 20 }}>
               ADHERENCE
             </h2>
-            <div style={{ fontSize: 56, fontWeight: 700, color: "#fff", letterSpacing: "-0.05em", lineHeight: 1, marginBottom: 8 }}>
-              <CountUp to={adherence} /><span style={{ fontSize: 28, color: "#333", fontWeight: 400 }}>%</span>
-            </div>
+           <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 8 }}>
+  <svg width="72" height="72" viewBox="0 0 72 72" style={{ flexShrink: 0 }}>
+    <circle cx="36" cy="36" r="30" fill="none" stroke="#141414" strokeWidth="5" />
+    <motion.circle
+      cx="36" cy="36" r="30" fill="none"
+      stroke={adherence >= 80 ? "#10b981" : "#f59e0b"}
+      strokeWidth="5" strokeLinecap="round"
+      strokeDasharray={2 * Math.PI * 30}
+      initial={{ strokeDashoffset: 2 * Math.PI * 30 }}
+      animate={{ strokeDashoffset: 2 * Math.PI * 30 * (1 - adherence / 100) }}
+      transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
+      transform="rotate(-90 36 36)"
+    />
+  </svg>
+  <div style={{ fontSize: 44, fontWeight: 700, color: "#fff", letterSpacing: "-0.05em", lineHeight: 1 }}>
+    <CountUp to={adherence} /><span style={{ fontSize: 22, color: "#333", fontWeight: 400 }}>%</span>
+  </div>
+</div>
             <div style={{ fontSize: 12, color: "#444", marginBottom: 20 }}>
               {adherenceData?.taken_total ?? 52} taken · {adherenceData?.missed_total ?? 8} missed
             </div>
