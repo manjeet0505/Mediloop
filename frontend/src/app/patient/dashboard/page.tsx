@@ -81,12 +81,33 @@ function Row({ children, style }: { children: React.ReactNode; style?: React.CSS
   );
 }
 
+function useCountdown(timeStr: string) {
+  const [label, setLabel] = useState({ text: "due now", overdue: false });
+  useEffect(() => {
+    const tick = () => {
+      const [time, mer] = timeStr.split(" ");
+      let [h, m] = time.split(":").map(Number);
+      if (mer === "PM" && h !== 12) h += 12;
+      const target = new Date();
+      target.setHours(h, m, 0, 0);
+      const diffMin = Math.round((target.getTime() - Date.now()) / 60000);
+      if (diffMin > 0) setLabel({ text: `due in ${diffMin}m`, overdue: false });
+      else setLabel({ text: `overdue by ${Math.abs(diffMin)}m`, overdue: true });
+    };
+    tick();
+    const id = setInterval(tick, 30000);
+    return () => clearInterval(id);
+  }, [timeStr]);
+  return label;
+}
+
 export default function PatientDashboard() {
   const [user, setUser] = useState<any>(null);
   const [meds, setMeds] = useState<any[]>([]);
   const [confirming, setConfirming] = useState<number | null>(null);
   const [adherenceData, setAdherenceData] = useState<any>(null);
   const [stockData, setStockData] = useState<any[]>([]);
+  const [burstAt, setBurstAt] = useState<number | null>(null);
 
   useEffect(() => {
     setUser(authService.getUser());
@@ -112,6 +133,8 @@ export default function PatientDashboard() {
     setTimeout(() => {
       setMeds(p => p.map((m, idx) => idx === i ? { ...m, taken: true } : m));
       setConfirming(null);
+      setBurstAt(i);
+      setTimeout(() => setBurstAt(null), 700);
     }, 600);
   };
 
@@ -125,6 +148,7 @@ export default function PatientDashboard() {
   const name = user?.full_name?.split(" ")[0] ?? "";
   const hour = new Date().getHours();
   const greet = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const countdown = useCountdown(nextDose?.time ?? "12:00 AM");
 
   return (
     <div>
@@ -180,6 +204,13 @@ export default function PatientDashboard() {
                 <span style={{ fontSize: 15, color: "#444", marginLeft: 8 }}>{nextDose.dosage}</span>
               </div>
               <span style={{ fontSize: 13, color: "#444" }}>{nextDose.time}</span>
+              <motion.span
+                animate={countdown.overdue ? { opacity: [1, 0.5, 1] } : {}}
+                transition={{ duration: 1.2, repeat: Infinity }}
+                style={{ fontSize: 11.5, color: countdown.overdue ? "#ef4444" : "#666" }}
+              >
+                {countdown.text}
+              </motion.span>
             </div>
             <motion.button
               whileHover={{ background: "#fff", color: "#000" }}
@@ -250,12 +281,29 @@ export default function PatientDashboard() {
                   opacity: med.taken ? 0.4 : 1,
                   transition: "opacity 0.3s",
                 }}>
-                <div style={{
-                  width: 6, height: 6, borderRadius: "50%",
-                  background: med.taken ? "#2a2a2a" : med.color,
-                  flexShrink: 0,
-                  boxShadow: med.taken ? "none" : `0 0 8px ${med.color}`,
-                }} />
+                <div style={{ position: "relative", flexShrink: 0 }}>
+                  <div style={{
+                    width: 6, height: 6, borderRadius: "50%",
+                    background: med.taken ? "#2a2a2a" : med.color,
+                    boxShadow: med.taken ? "none" : `0 0 8px ${med.color}`,
+                  }} />
+                  <AnimatePresence>
+                    {burstAt === i && (
+                      <motion.div
+                        initial={{ scale: 0.5, opacity: 0.8 }}
+                        animate={{ scale: 4, opacity: 0 }}
+                        transition={{ duration: 0.6, ease: "easeOut" }}
+                        style={{
+                          position: "absolute", top: "50%", left: "50%",
+                          width: 6, height: 6, borderRadius: "50%",
+                          background: "#10b981",
+                          transform: "translate(-50%, -50%)",
+                          pointerEvents: "none",
+                        }}
+                      />
+                    )}
+                  </AnimatePresence>
+                </div>
                 <div style={{ flex: 1 }}>
                   <span style={{ fontSize: 14, fontWeight: 500, color: med.taken ? "#444" : "#e8e8e8" }}>
                     {med.name}
@@ -353,24 +401,24 @@ export default function PatientDashboard() {
             <h2 style={{ fontSize: 13, color: "#666", fontWeight: 400, letterSpacing: "0.02em", marginBottom: 20 }}>
               ADHERENCE
             </h2>
-           <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 8 }}>
-  <svg width="72" height="72" viewBox="0 0 72 72" style={{ flexShrink: 0 }}>
-    <circle cx="36" cy="36" r="30" fill="none" stroke="#141414" strokeWidth="5" />
-    <motion.circle
-      cx="36" cy="36" r="30" fill="none"
-      stroke={adherence >= 80 ? "#10b981" : "#f59e0b"}
-      strokeWidth="5" strokeLinecap="round"
-      strokeDasharray={2 * Math.PI * 30}
-      initial={{ strokeDashoffset: 2 * Math.PI * 30 }}
-      animate={{ strokeDashoffset: 2 * Math.PI * 30 * (1 - adherence / 100) }}
-      transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
-      transform="rotate(-90 36 36)"
-    />
-  </svg>
-  <div style={{ fontSize: 44, fontWeight: 700, color: "#fff", letterSpacing: "-0.05em", lineHeight: 1 }}>
-    <CountUp to={adherence} /><span style={{ fontSize: 22, color: "#333", fontWeight: 400 }}>%</span>
-  </div>
-</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 8 }}>
+              <svg width="72" height="72" viewBox="0 0 72 72" style={{ flexShrink: 0 }}>
+                <circle cx="36" cy="36" r="30" fill="none" stroke="#141414" strokeWidth="5" />
+                <motion.circle
+                  cx="36" cy="36" r="30" fill="none"
+                  stroke={adherence >= 80 ? "#10b981" : "#f59e0b"}
+                  strokeWidth="5" strokeLinecap="round"
+                  strokeDasharray={2 * Math.PI * 30}
+                  initial={{ strokeDashoffset: 2 * Math.PI * 30 }}
+                  animate={{ strokeDashoffset: 2 * Math.PI * 30 * (1 - adherence / 100) }}
+                  transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
+                  transform="rotate(-90 36 36)"
+                />
+              </svg>
+              <div style={{ fontSize: 44, fontWeight: 700, color: "#fff", letterSpacing: "-0.05em", lineHeight: 1 }}>
+                <CountUp to={adherence} /><span style={{ fontSize: 22, color: "#333", fontWeight: 400 }}>%</span>
+              </div>
+            </div>
             <div style={{ fontSize: 12, color: "#444", marginBottom: 20 }}>
               {adherenceData?.taken_total ?? 52} taken · {adherenceData?.missed_total ?? 8} missed
             </div>
