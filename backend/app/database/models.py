@@ -47,6 +47,8 @@ class Patient(Base):
 
     id = Column(String, primary_key=True, default=generate_uuid)
     clinic_id = Column(String, ForeignKey("users.id"), nullable=False)
+    user_id = Column(String, ForeignKey("users.id"), unique=True, nullable=True)
+    invite_code = Column(String, unique=True, nullable=True, index=True)
     full_name = Column(String, nullable=False)
     phone = Column(String, nullable=False)
     family_phone = Column(String, nullable=True)
