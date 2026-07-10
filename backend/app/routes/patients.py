@@ -7,8 +7,22 @@ from app.database.schemas import PatientCreate, PatientResponse
 from app.utils.auth import get_current_user
 from app.utils.validators import validate_phone, validate_name
 import uuid
+import random
+import string
 
 router = APIRouter(prefix="/api/v1/patients", tags=["Patient Management"])
+
+# Excludes confusing chars: 0/O, 1/I/L
+INVITE_CODE_CHARS = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"
+
+async def generate_unique_invite_code(db: AsyncSession) -> str:
+    """Generate a 6-character invite code, retrying on collision."""
+    for _ in range(10):
+        code = "".join(random.choices(INVITE_CODE_CHARS, k=6))
+        result = await db.execute(select(Patient).where(Patient.invite_code == code))
+        if not result.scalar_one_or_none():
+            return code
+    raise HTTPException(status_code=500, detail="Could not generate unique invite code, try again")
 
 @router.post("/", response_model=PatientResponse)
 async def create_patient(
@@ -24,6 +38,8 @@ async def create_patient(
     if data.doctor_phone:
         validate_phone(data.doctor_phone)
 
+    invite_code = await generate_unique_invite_code(db)
+
     patient = Patient(
         id=str(uuid.uuid4()),
         clinic_id=current_user.id,
@@ -33,6 +49,7 @@ async def create_patient(
         doctor_phone=data.doctor_phone,
         age=data.age,
         language=data.language,
+        invite_code=invite_code,
     )
     db.add(patient)
     await db.commit()
@@ -112,3 +129,22 @@ async def delete_patient(
     patient.is_active = False
     await db.commit()
     return {"message": "Patient deactivated successfully"}
+
+@router.post("/{patient_id}/regenerate-invite", response_model=PatientResponse)
+async def regenerate_invite_code(
+    patient_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Generate a fresh invite code for a patient (e.g. if the old one expired or was shared by mistake)"""
+    result = await db.execute(
+        select(Patient).where(Patient.id == patient_id, Patient.clinic_id == current_user.id)
+    )
+    patient = result.scalar_one_or_none()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    patient.invite_code = await generate_unique_invite_code(db)
+    await db.commit()
+    await db.refresh(patient)
+    return PatientResponse.model_validate(patient)
