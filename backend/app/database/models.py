@@ -39,7 +39,7 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    patients = relationship("Patient", back_populates="clinic")
+    patients = relationship("Patient", back_populates="clinic", foreign_keys="[Patient.clinic_id]")
 
 # ── Patients ───────────────────────────────────────────────────────
 class Patient(Base):
@@ -58,7 +58,7 @@ class Patient(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    clinic = relationship("User", back_populates="patients")
+    clinic = relationship("User", back_populates="patients", foreign_keys=[clinic_id])
     prescriptions = relationship("Prescription", back_populates="patient")
     dose_events = relationship("DoseEvent", back_populates="patient")
     stock_levels = relationship("StockLevel", back_populates="patient")
