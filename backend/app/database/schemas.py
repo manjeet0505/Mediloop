@@ -2,7 +2,7 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 from datetime import datetime
 
-# ── Auth ───────────────────────────────────────────────────────────
+# ── Auth ────────────────────────────────────────────────────────────
 class UserCreate(BaseModel):
     email: str
     password: str
@@ -32,7 +32,7 @@ class Token(BaseModel):
     token_type: str = "bearer"
     user: UserResponse
 
-# ── Patient ────────────────────────────────────────────────────────
+# ── Patient ─────────────────────────────────────────────────────────
 class PatientCreate(BaseModel):
     full_name: str
     phone: str
@@ -49,11 +49,13 @@ class PatientResponse(BaseModel):
     language: str
     is_active: bool
     created_at: datetime
+    user_id: Optional[str] = None
+    invite_code: Optional[str] = None
 
     class Config:
         from_attributes = True
 
-# ── Prescription ───────────────────────────────────────────────────
+# ── Prescription ────────────────────────────────────────────────────
 class PrescriptionResponse(BaseModel):
     id: str
     patient_id: str
@@ -66,7 +68,7 @@ class PrescriptionResponse(BaseModel):
     class Config:
         from_attributes = True
 
-# ── Dose Event ─────────────────────────────────────────────────────
+# ── Dose Event ──────────────────────────────────────────────────────
 class DoseEventResponse(BaseModel):
     id: str
     patient_id: str
@@ -78,7 +80,7 @@ class DoseEventResponse(BaseModel):
     class Config:
         from_attributes = True
 
-# ── Stock ──────────────────────────────────────────────────────────
+# ── Stock ───────────────────────────────────────────────────────────
 class StockResponse(BaseModel):
     id: str
     patient_id: str
