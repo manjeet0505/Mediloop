@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.database.connection import get_db
-from app.database.models import User
+from app.database.models import User, Patient
 from app.database.schemas import UserCreate, UserLogin, UserResponse, Token
 from app.utils.auth import hash_password, verify_password, create_access_token, get_current_user
 from app.utils.validators import validate_email, validate_password, validate_phone, validate_name
@@ -45,6 +45,21 @@ async def signup(data: UserCreate, request: Request, db: AsyncSession = Depends(
     if result.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Email already registered")
 
+    # Patient signup requires a valid, unclaimed invite code
+    patient_to_link = None
+    if data.role == "patient":
+        if not data.invite_code:
+            raise HTTPException(status_code=400, detail="Invite code is required for patient signup")
+
+        code = data.invite_code.strip().upper()
+        result = await db.execute(select(Patient).where(Patient.invite_code == code))
+        patient_to_link = result.scalar_one_or_none()
+
+        if not patient_to_link:
+            raise HTTPException(status_code=404, detail="Invalid invite code")
+        if patient_to_link.user_id:
+            raise HTTPException(status_code=400, detail="This invite code has already been used")
+
     # Create user
     user = User(
         id=str(uuid.uuid4()),
@@ -56,6 +71,12 @@ async def signup(data: UserCreate, request: Request, db: AsyncSession = Depends(
         phone=data.phone,
     )
     db.add(user)
+    await db.flush()  # ensures user.id is available without committing yet
+
+    # Link patient row to this new login
+    if patient_to_link:
+        patient_to_link.user_id = user.id
+
     await db.commit()
     await db.refresh(user)
 
@@ -69,7 +90,6 @@ async def login(data: UserLogin, request: Request, db: AsyncSession = Depends(ge
 
     # Validate
     email = validate_email(data.email)
-
     result = await db.execute(select(User).where(User.email == email))
     user = result.scalar_one_or_none()
 

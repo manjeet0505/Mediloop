@@ -86,6 +86,7 @@ class DoseEvent(Base):
     id = Column(String, primary_key=True, default=generate_uuid)
     patient_id = Column(String, ForeignKey("patients.id"), nullable=False)
     medicine_name = Column(String, nullable=False)
+    dosage = Column(String, nullable=True)
     scheduled_time = Column(DateTime(timezone=True), nullable=False)
     status = Column(String, default="pending")
     taken_at = Column(DateTime(timezone=True), nullable=True)
