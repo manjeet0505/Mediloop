@@ -101,6 +101,7 @@ class StockLevel(Base):
     id = Column(String, primary_key=True, default=generate_uuid)
     patient_id = Column(String, ForeignKey("patients.id"), nullable=False)
     medicine_name = Column(String, nullable=False)
+    dosage = Column(String, nullable=True)
     total_quantity = Column(Integer, nullable=False)
     doses_taken = Column(Integer, default=0)
     doses_per_day = Column(Integer, default=1)
