@@ -10,6 +10,7 @@ class UserCreate(BaseModel):
     role: str = "clinic"
     clinic_name: Optional[str] = None
     phone: Optional[str] = None
+    invite_code: Optional[str] = None
 
 class UserLogin(BaseModel):
     email: str
