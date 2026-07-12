@@ -13,6 +13,15 @@ async function fetchPatient(path: string, token: string) {
   return res.json();
 }
 
+async function confirmDose(doseId: string, token: string) {
+  const res = await fetch(`${API}/api/v1/patient/me/confirm-dose/${doseId}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`${res.status}`);
+  return res.json();
+}
+
 const WEEK_DEFAULT = [
   { d: "M", p: 100 }, { d: "T", p: 67 }, { d: "W", p: 100 },
   { d: "T", p: 33 }, { d: "F", p: 100 }, { d: "S", p: 67 }, { d: "S", p: 67 },
@@ -108,6 +117,7 @@ export default function PatientDashboard() {
   const [adherenceData, setAdherenceData] = useState<any>(null);
   const [stockData, setStockData] = useState<any[]>([]);
   const [burstAt, setBurstAt] = useState<number | null>(null);
+  const [errorAt, setErrorAt] = useState<number | null>(null);
 
   useEffect(() => {
     setUser(authService.getUser());
@@ -128,14 +138,25 @@ export default function PatientDashboard() {
     return () => clearTimeout(timer);
   }, []);
 
-  const markTaken = (i: number) => {
+  const markTaken = async (i: number) => {
+    const med = meds[i];
+    const token = authService.getToken();
+    if (!token || !med?.id) return;
+
     setConfirming(i);
-    setTimeout(() => {
+    setErrorAt(null);
+    try {
+      await confirmDose(med.id, token);
       setMeds(p => p.map((m, idx) => idx === i ? { ...m, taken: true } : m));
-      setConfirming(null);
       setBurstAt(i);
       setTimeout(() => setBurstAt(null), 700);
-    }, 600);
+    } catch (err) {
+      console.error(err);
+      setErrorAt(i);
+      setTimeout(() => setErrorAt(null), 2000);
+    } finally {
+      setConfirming(null);
+    }
   };
 
   const adherence = adherenceData?.overall ?? 87;
@@ -271,7 +292,7 @@ export default function PatientDashboard() {
                 <div key={i} style={{ height: 56, background: "#0a0a0a", borderRadius: 8, marginBottom: 8, animation: "pulse 1.5s infinite" }} />
               ))
             ) : meds.map((med, i) => (
-              <motion.div key={i} layout
+              <motion.div key={med.id ?? i} layout
                 initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.18 + i * 0.05 }}
                 style={{
@@ -325,6 +346,11 @@ export default function PatientDashboard() {
                           style={{ width: 4, height: 4, borderRadius: "50%", background: "#444" }} />
                       ))}
                     </motion.div>
+                  ) : errorAt === i ? (
+                    <motion.span key="err" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                      style={{ fontSize: 11.5, color: "#ef4444", minWidth: 80, textAlign: "right" }}>
+                      Failed, retry
+                    </motion.span>
                   ) : (
                     <motion.button key="btn"
                       whileHover={{ color: "#fff", borderColor: "#444" }}
