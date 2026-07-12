@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from datetime import datetime, timedelta, timezone, date
+import uuid
 from app.database.connection import get_db
 from app.database.models import User, Patient, DoseEvent, StockLevel
 from app.utils.auth import get_current_user
@@ -39,6 +40,68 @@ async def get_linked_patient(current_user: User, db: AsyncSession) -> Patient:
     return patient
 
 
+async def ensure_todays_doses(patient: Patient, db: AsyncSession) -> list[DoseEvent]:
+    """
+    Returns today's DoseEvent rows for this patient. If none exist yet (new day,
+    nothing generated), derive today's schedule from the most recent distinct
+    (medicine, dosage, time-of-day) pattern seen in the last 14 days and create
+    fresh 'pending' doses for today. This is a stand-in for what Agent 2
+    (Reminder Engine) will do automatically once it's wired to run daily.
+    """
+    today_start = datetime.combine(date.today(), datetime.min.time(), tzinfo=timezone.utc)
+    today_end = today_start + timedelta(days=1)
+
+    result = await db.execute(
+        select(DoseEvent).where(
+            DoseEvent.patient_id == patient.id,
+            DoseEvent.scheduled_time >= today_start,
+            DoseEvent.scheduled_time < today_end,
+        ).order_by(DoseEvent.scheduled_time)
+    )
+    todays = result.scalars().all()
+    if todays:
+        return todays
+
+    lookback_start = today_start - timedelta(days=14)
+    result = await db.execute(
+        select(DoseEvent).where(
+            DoseEvent.patient_id == patient.id,
+            DoseEvent.scheduled_time >= lookback_start,
+            DoseEvent.scheduled_time < today_start,
+        ).order_by(DoseEvent.scheduled_time.desc())
+    )
+    past = result.scalars().all()
+
+    seen = set()
+    new_doses = []
+    for d in past:
+        key = (d.medicine_name, d.dosage, d.scheduled_time.hour, d.scheduled_time.minute)
+        if key in seen:
+            continue
+        seen.add(key)
+
+        scheduled = today_start.replace(hour=d.scheduled_time.hour, minute=d.scheduled_time.minute)
+        new_dose = DoseEvent(
+            id=str(uuid.uuid4()),
+            patient_id=patient.id,
+            medicine_name=d.medicine_name,
+            dosage=d.dosage,
+            scheduled_time=scheduled,
+            status="pending",
+        )
+        db.add(new_dose)
+        new_doses.append(new_dose)
+
+    if new_doses:
+        await db.commit()
+        for nd in new_doses:
+            await db.refresh(nd)
+
+    # sort by time for consistent ordering
+    new_doses.sort(key=lambda d: d.scheduled_time)
+    return new_doses
+
+
 @router.get("/me")
 async def get_my_profile(
     current_user: User = Depends(get_current_user),
@@ -61,20 +124,7 @@ async def get_my_medicines(
     db: AsyncSession = Depends(get_db)
 ):
     patient = await get_linked_patient(current_user, db)
-
-    today_start = datetime.combine(date.today(), datetime.min.time(), tzinfo=timezone.utc)
-    today_end = today_start + timedelta(days=1)
-
-    result = await db.execute(
-        select(DoseEvent)
-        .where(
-            DoseEvent.patient_id == patient.id,
-            DoseEvent.scheduled_time >= today_start,
-            DoseEvent.scheduled_time < today_end,
-        )
-        .order_by(DoseEvent.scheduled_time)
-    )
-    doses = result.scalars().all()
+    doses = await ensure_todays_doses(patient, db)
 
     return [
         {
@@ -119,6 +169,9 @@ async def get_adherence(
 ):
     patient = await get_linked_patient(current_user, db)
 
+    # make sure today's doses exist so they count toward the week chart too
+    await ensure_todays_doses(patient, db)
+
     window_start = datetime.now(timezone.utc) - timedelta(days=7)
     result = await db.execute(
         select(DoseEvent)
@@ -132,7 +185,6 @@ async def get_adherence(
     counted = taken_total + missed_total
     overall = round((taken_total / counted) * 100) if counted > 0 else 100
 
-    # Group doses by calendar day for the week chart
     by_day: dict[date, list] = {}
     for d in doses:
         day = d.scheduled_time.date()
@@ -148,7 +200,6 @@ async def get_adherence(
         pct = round((day_taken / day_counted) * 100) if day_counted > 0 else 0
         week.append({"d": DAY_LABELS[day.weekday()], "p": pct})
 
-    # Streak: consecutive fully-taken days, walking backward, skipping days with no doses
     streak = 0
     check_day = today
     for _ in range(60):
