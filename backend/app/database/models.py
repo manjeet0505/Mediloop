@@ -90,6 +90,7 @@ class DoseEvent(Base):
     scheduled_time = Column(DateTime(timezone=True), nullable=False)
     status = Column(String, default="pending")
     taken_at = Column(DateTime(timezone=True), nullable=True)
+    reminder_sent_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     patient = relationship("Patient", back_populates="dose_events")
