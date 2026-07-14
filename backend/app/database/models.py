@@ -56,6 +56,8 @@ class Patient(Base):
     age = Column(Integer, nullable=True)
     language = Column(String, default="en")
     is_active = Column(Boolean, default=True)
+    escalation_level = Column(String, default="normal")
+    last_escalation_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     clinic = relationship("User", back_populates="patients", foreign_keys=[clinic_id])
