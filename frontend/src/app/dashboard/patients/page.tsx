@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { authService } from "@/lib/auth";
+import AddPatientModal from "@/components/patients/AddPatientModal";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -9,6 +10,7 @@ export default function PatientsPage() {
   const [patients, setPatients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -50,6 +52,7 @@ export default function PatientsPage() {
         </div>
         <motion.button
           whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+          onClick={() => setModalOpen(true)}
           style={{
             display: "flex", alignItems: "center", gap: 6,
             padding: "9px 18px", borderRadius: 10, fontSize: 13,
@@ -206,6 +209,11 @@ export default function PatientsPage() {
           </>
         )}
       </motion.div>
+      <AddPatientModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSuccess={(newPatient) => setPatients(prev => [newPatient, ...prev])}
+      />
     </div>
   );
 }
