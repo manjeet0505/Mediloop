@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone, date
 from app.database.connection import get_db
 from app.database.models import User, Patient, DoseEvent, StockLevel
 from app.utils.auth import get_current_user
@@ -108,7 +108,6 @@ async def get_adherence(
     patient = await get_linked_patient(current_user, db)
     await ensure_todays_doses(patient, db)
 
-    from datetime import timedelta, date
     window_start = datetime.now(timezone.utc) - timedelta(days=7)
     result = await db.execute(
         select(DoseEvent)
@@ -184,3 +183,108 @@ async def get_stock(
             "color": color_for(s.medicine_name),
         })
     return output
+
+
+@router.get("/me/medicines/list")
+async def get_medicines_list(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    One row per active medicine: dosage, stock, and that medicine's own
+    adherence % over the last 30 days (computed from DoseEvent history).
+    """
+    patient = await get_linked_patient(current_user, db)
+
+    result = await db.execute(select(StockLevel).where(StockLevel.patient_id == patient.id))
+    stocks = result.scalars().all()
+
+    window_start = datetime.now(timezone.utc) - timedelta(days=30)
+    result = await db.execute(
+        select(DoseEvent).where(
+            DoseEvent.patient_id == patient.id,
+            DoseEvent.scheduled_time >= window_start,
+        )
+    )
+    doses = result.scalars().all()
+
+    by_medicine: dict = {}
+    for d in doses:
+        by_medicine.setdefault(d.medicine_name, []).append(d)
+
+    output = []
+    for s in stocks:
+        remaining = max(s.total_quantity - s.doses_taken, 0)
+        days_left = remaining // s.doses_per_day if s.doses_per_day > 0 else remaining
+
+        med_doses = by_medicine.get(s.medicine_name, [])
+        taken = sum(1 for d in med_doses if d.status == "taken")
+        missed = sum(1 for d in med_doses if d.status == "missed")
+        counted = taken + missed
+        adherence = round((taken / counted) * 100) if counted > 0 else 100
+
+        output.append({
+            "name": s.medicine_name,
+            "dosage": s.dosage or "",
+            "doses_per_day": s.doses_per_day,
+            "remaining": remaining,
+            "total": s.total_quantity,
+            "days_left": days_left,
+            "adherence_30d": adherence,
+            "taken_30d": taken,
+            "missed_30d": missed,
+            "color": color_for(s.medicine_name),
+        })
+
+    return output
+
+
+@router.get("/me/medicines/heatmap")
+async def get_medicines_heatmap(
+    weeks: int = 12,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Daily dose summary for the trailing N weeks — GitHub-contributions-style
+    calendar. Each cell: date, taken count, missed count, total, pct.
+    """
+    patient = await get_linked_patient(current_user, db)
+
+    days = weeks * 7
+    window_start = datetime.combine(
+        date.today() - timedelta(days=days - 1), datetime.min.time(), tzinfo=timezone.utc
+    )
+
+    result = await db.execute(
+        select(DoseEvent).where(
+            DoseEvent.patient_id == patient.id,
+            DoseEvent.scheduled_time >= window_start,
+        )
+    )
+    doses = result.scalars().all()
+
+    by_day: dict = {}
+    for d in doses:
+        day = d.scheduled_time.date()
+        by_day.setdefault(day, []).append(d)
+
+    today = date.today()
+    cells = []
+    for i in range(days - 1, -1, -1):
+        day = today - timedelta(days=i)
+        day_doses = by_day.get(day, [])
+        taken = sum(1 for d in day_doses if d.status == "taken")
+        missed = sum(1 for d in day_doses if d.status == "missed")
+        total = taken + missed
+        pct = round((taken / total) * 100) if total > 0 else None  # None = no data that day
+
+        cells.append({
+            "date": day.isoformat(),
+            "taken": taken,
+            "missed": missed,
+            "total": total,
+            "pct": pct,
+        })
+
+    return {"weeks": weeks, "days": cells}
