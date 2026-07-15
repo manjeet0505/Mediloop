@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { authService } from "@/lib/auth";
+import AddPatientModal from "@/components/patients/AddPatientModal";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -182,6 +183,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [now, setNow] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     setNow(new Date().toLocaleDateString("en-IN", {
@@ -280,6 +282,7 @@ export default function DashboardPage() {
           <motion.button
             whileHover={{ scale: 1.03, boxShadow: "0 0 20px color-mix(in srgb, var(--accent-primary) 30%, transparent)" }}
             whileTap={{ scale: 0.97 }}
+            onClick={() => setModalOpen(true)}
             style={{
               display: "flex", alignItems: "center", gap: 6,
               padding: "8px 16px", borderRadius: 10, fontSize: 13,
@@ -719,6 +722,11 @@ export default function DashboardPage() {
           </motion.div>
         </div>
       </div>
+      <AddPatientModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSuccess={(newPatient) => setPatients(prev => [newPatient, ...prev])}
+      />
     </div>
   );
 }
