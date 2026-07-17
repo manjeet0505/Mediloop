@@ -1,4 +1,5 @@
 import re
+import json
 import uuid
 from datetime import datetime, timedelta, timezone, date
 from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException
@@ -89,7 +90,7 @@ async def confirm_prescription(
 ):
     """
     Persists a reviewed/edited care plan:
-      - Prescription record (audit trail)
+      - Prescription record (structured JSON, so it can be listed/rendered later)
       - Today's DoseEvent rows per medicine (the scheduler carries the pattern forward daily)
       - StockLevel upsert per medicine (duration x frequency = total quantity)
     """
@@ -98,13 +99,14 @@ async def confirm_prescription(
     if not data.medications:
         raise HTTPException(status_code=400, detail="At least one medication is required")
 
-    # 1) Prescription audit record
+    # 1) Prescription audit record — store medications as structured JSON
+    medications_json = json.dumps([m.model_dump() for m in data.medications])
     prescription = Prescription(
         id=str(uuid.uuid4()),
         patient_id=patient.id,
         doctor_name=data.doctor_name,
         raw_text=data.raw_text,
-        care_plan=", ".join(f"{m.medicine_name} {m.dosage} ({m.frequency})" for m in data.medications),
+        care_plan=medications_json,
         safety_flag=data.safety_flag,
         safety_note=data.safety_note,
         llm_used="openai-vision",
@@ -119,8 +121,6 @@ async def confirm_prescription(
         clock_times = DOSE_TIMES.get(times_per_day, DOSE_TIMES[1])
         duration_days = parse_duration_days(med.duration)
 
-        # today's doses — the scheduler's ensure_todays_doses() will carry this
-        # pattern forward automatically on subsequent days
         for time_str in clock_times:
             hour, minute = map(int, time_str.split(":"))
             scheduled = today_start.replace(hour=hour, minute=minute)
@@ -133,7 +133,7 @@ async def confirm_prescription(
                 )
             )
             if existing.scalar_one_or_none():
-                continue  # already scheduled, don't duplicate
+                continue
 
             db.add(DoseEvent(
                 id=str(uuid.uuid4()),
@@ -145,7 +145,6 @@ async def confirm_prescription(
             ))
             created_doses += 1
 
-        # stock upsert — avoids duplicate rows for the same medicine
         result = await db.execute(
             select(StockLevel).where(
                 StockLevel.patient_id == patient.id,
@@ -180,3 +179,38 @@ async def confirm_prescription(
         "medications_saved": len(data.medications),
         "doses_created_today": created_doses,
     }
+
+
+@router.get("/patient/{patient_id}")
+async def list_prescriptions(
+    patient_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Prescription history for a patient, newest first — for the Prescriptions tab."""
+    await get_owned_patient(patient_id, current_user, db)
+
+    result = await db.execute(
+        select(Prescription)
+        .where(Prescription.patient_id == patient_id)
+        .order_by(Prescription.created_at.desc())
+    )
+    prescriptions = result.scalars().all()
+
+    output = []
+    for p in prescriptions:
+        try:
+            medications = json.loads(p.care_plan) if p.care_plan else []
+        except (json.JSONDecodeError, TypeError):
+            medications = []  # legacy plain-text rows from before this change
+
+        output.append({
+            "id": p.id,
+            "doctor_name": p.doctor_name,
+            "created_at": p.created_at.isoformat() if p.created_at else None,
+            "safety_flag": p.safety_flag,
+            "safety_note": p.safety_note,
+            "medications": medications,
+        })
+
+    return output
