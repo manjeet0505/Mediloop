@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { authService } from "@/lib/auth";
+import UploadPrescriptionModal from "@/components/patients/UploadPrescriptionModal";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
