@@ -92,6 +92,27 @@ export default function PatientDetailPage() {
   const [activeTab, setActiveTab] = useState("Overview");
   const [adherence] = useState(87);
 
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [prescriptions, setPrescriptions] = useState<any[]>([]);
+const [loadingPrescriptions, setLoadingPrescriptions] = useState(false);
+
+const fetchPrescriptions = () => {
+  const token = authService.getToken();
+  if (!token) return;
+  setLoadingPrescriptions(true);
+  fetch(`${API}/api/v1/prescription/patient/${id}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+    .then(r => r.json())
+    .then(d => setPrescriptions(Array.isArray(d) ? d : d.prescriptions || []))
+    .catch(() => setPrescriptions([]))
+    .finally(() => setLoadingPrescriptions(false));
+};
+
+useEffect(() => {
+  if (activeTab === "Prescriptions") fetchPrescriptions();
+}, [activeTab, id]);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       const token = authService.getToken();
@@ -648,35 +669,107 @@ export default function PatientDetailPage() {
           )}
 
           {/* ── PRESCRIPTIONS TAB ── */}
-          {activeTab === "Prescriptions" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <div style={{
-                background: "var(--bg-surface)", border: "1px solid var(--border-subtle)",
-                borderRadius: 14, padding: 48, textAlign: "center"
-              }}>
-                <i className="ti ti-file-text" style={{ fontSize: 48, color: "var(--text-muted)", display: "block", marginBottom: 12 }} />
-                <p style={{ fontSize: 14, fontWeight: 500, color: "var(--text-secondary)", marginBottom: 4 }}>
-                  No prescriptions uploaded yet
-                </p>
-                <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 20 }}>
-                  Upload a prescription image to auto-parse medicines
-                </p>
-                <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                  style={{
-                    display: "inline-flex", alignItems: "center", gap: 6,
-                    padding: "10px 20px", borderRadius: 10, fontSize: 13, fontWeight: 500,
-                    border: "none", cursor: "pointer",
-                    background: "var(--accent-gradient)", color: "var(--text-inverse)"
-                  }}>
-                  <i className="ti ti-upload" style={{ fontSize: 15 }} />
-                  Upload Prescription
-                </motion.button>
+{activeTab === "Prescriptions" && (
+  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+
+    <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}>
+      <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+        onClick={() => setShowUploadModal(true)}
+        style={{
+          display: "inline-flex", alignItems: "center", gap: 6,
+          padding: "10px 20px", borderRadius: 10, fontSize: 13, fontWeight: 500,
+          border: "none", cursor: "pointer",
+          background: "var(--accent-gradient)", color: "var(--text-inverse)"
+        }}>
+        <i className="ti ti-upload" style={{ fontSize: 15 }} />
+        Upload Prescription
+      </motion.button>
+    </div>
+
+    {loadingPrescriptions ? (
+      <div style={{ textAlign: "center", padding: 40 }}>
+        <motion.div animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          style={{
+            width: 28, height: 28, borderRadius: "50%", margin: "0 auto",
+            border: "2px solid var(--border-subtle)",
+            borderTop: "2px solid var(--accent-primary)"
+          }} />
+      </div>
+    ) : prescriptions.length === 0 ? (
+      <div style={{
+        background: "var(--bg-surface)", border: "1px solid var(--border-subtle)",
+        borderRadius: 14, padding: 48, textAlign: "center"
+      }}>
+        <i className="ti ti-file-text" style={{ fontSize: 48, color: "var(--text-muted)", display: "block", marginBottom: 12 }} />
+        <p style={{ fontSize: 14, fontWeight: 500, color: "var(--text-secondary)", marginBottom: 4 }}>
+          No prescriptions uploaded yet
+        </p>
+        <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
+          Upload a prescription image to auto-parse medicines
+        </p>
+      </div>
+    ) : (
+      prescriptions.map((rx, i) => (
+        <motion.div key={rx.id || i}
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: i * 0.06 }}
+          style={{
+            background: "var(--bg-surface)", border: "1px solid var(--border-subtle)",
+            borderRadius: 14, padding: 20
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)" }}>
+                {rx.doctor_name || "Unknown Doctor"}
+              </div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "monospace" }}>
+                {rx.created_at ? new Date(rx.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : ""}
               </div>
             </div>
-          )}
+            {rx.safety_flag && (
+              <span style={{
+                fontSize: 10, padding: "3px 8px", borderRadius: 20,
+                background: "color-mix(in srgb, var(--warning) 12%, transparent)",
+                color: "var(--warning)", fontFamily: "monospace"
+              }}>
+                ⚠ Flagged
+              </span>
+            )}
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {(rx.medications || []).map((m: any, j: number) => (
+              <div key={j} style={{
+                display: "flex", justifyContent: "space-between",
+                padding: "8px 12px", borderRadius: 8,
+                background: "var(--bg-overlay)", border: "1px solid var(--border-subtle)"
+              }}>
+                <span style={{ fontSize: 12, color: "var(--text-primary)" }}>{m.medicine_name}</span>
+                <span style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "monospace" }}>
+                  {m.dosage} · {m.frequency}
+                </span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      ))
+    )}
+  </div>
+)}
 
         </motion.div>
       </AnimatePresence>
+
+      <UploadPrescriptionModal
+        isOpen={showUploadModal}
+        patientId={id}
+        onClose={() => setShowUploadModal(false)}
+        onSuccess={() => {
+          setShowUploadModal(false);
+          fetchPrescriptions();
+        }}
+      />
     </div>
   );
 }
