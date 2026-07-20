@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.database.connection import get_db
-from app.database.models import User, Patient
+from app.database.models import User, Patient, DoseEvent, StockLevel
+from datetime import datetime, timedelta, timezone
+from app.routes.patient import color_for
 from app.database.schemas import PatientCreate, PatientResponse
 from app.utils.auth import get_current_user
 from app.utils.validators import validate_phone, validate_name
@@ -148,3 +150,59 @@ async def regenerate_invite_code(
     await db.commit()
     await db.refresh(patient)
     return PatientResponse.model_validate(patient)
+
+@router.get("/{patient_id}/medicines")
+async def get_patient_medicines(
+    patient_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Real medicines + stock + 30-day adherence for one patient — clinic view."""
+    result = await db.execute(
+        select(Patient).where(Patient.id == patient_id, Patient.clinic_id == current_user.id)
+    )
+    patient = result.scalar_one_or_none()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    result = await db.execute(select(StockLevel).where(StockLevel.patient_id == patient.id))
+    stocks = result.scalars().all()
+
+    window_start = datetime.now(timezone.utc) - timedelta(days=30)
+    result = await db.execute(
+        select(DoseEvent).where(
+            DoseEvent.patient_id == patient.id,
+            DoseEvent.scheduled_time >= window_start,
+        )
+    )
+    doses = result.scalars().all()
+
+    by_medicine: dict = {}
+    for d in doses:
+        by_medicine.setdefault(d.medicine_name, []).append(d)
+
+    output = []
+    for s in stocks:
+        remaining = max(s.total_quantity - s.doses_taken, 0)
+        days_left = remaining // s.doses_per_day if s.doses_per_day > 0 else remaining
+
+        med_doses = by_medicine.get(s.medicine_name, [])
+        taken = sum(1 for d in med_doses if d.status == "taken")
+        missed = sum(1 for d in med_doses if d.status == "missed")
+        counted = taken + missed
+        adherence = round((taken / counted) * 100) if counted > 0 else 100
+
+        output.append({
+            "name": s.medicine_name,
+            "dosage": s.dosage or "",
+            "doses_per_day": s.doses_per_day,
+            "remaining": remaining,
+            "total": s.total_quantity,
+            "days_left": days_left,
+            "adherence_30d": adherence,
+            "taken_30d": taken,
+            "missed_30d": missed,
+            "color": color_for(s.medicine_name),
+        })
+
+    return output
