@@ -39,11 +39,17 @@ def parse_duration_days(duration_str: str) -> int:
 
 
 async def get_owned_patient(patient_id: str, current_user: User, db: AsyncSession) -> Patient:
-    if current_user.role != "clinic":
-        raise HTTPException(status_code=403, detail="Clinic access only")
-    result = await db.execute(
-        select(Patient).where(Patient.id == patient_id, Patient.clinic_id == current_user.id)
-    )
+    if current_user.role == "clinic":
+        result = await db.execute(
+            select(Patient).where(Patient.id == patient_id, Patient.clinic_id == current_user.id)
+        )
+    elif current_user.role == "patient":
+        result = await db.execute(
+            select(Patient).where(Patient.id == patient_id, Patient.user_id == current_user.id)
+        )
+    else:
+        raise HTTPException(status_code=403, detail="Access denied")
+
     patient = result.scalar_one_or_none()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
