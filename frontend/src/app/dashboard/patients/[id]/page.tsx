@@ -91,7 +91,26 @@ export default function PatientDetailPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("Overview");
   const [adherence] = useState(87);
+  
+  const [realMedicines, setRealMedicines] = useState<any[]>([]);
+const [loadingMedicines, setLoadingMedicines] = useState(false);
 
+const fetchMedicines = () => {
+  const token = authService.getToken();
+  if (!token) return;
+  setLoadingMedicines(true);
+  fetch(`${API}/api/v1/patients/${id}/medicines`, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+    .then(r => r.json())
+    .then(d => setRealMedicines(Array.isArray(d) ? d : []))
+    .catch(() => setRealMedicines([]))
+    .finally(() => setLoadingMedicines(false));
+};
+
+useEffect(() => {
+  if (activeTab === "Medicines" || activeTab === "Stock") fetchMedicines();
+}, [activeTab, id]);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [prescriptions, setPrescriptions] = useState<any[]>([]);
 const [loadingPrescriptions, setLoadingPrescriptions] = useState(false);
