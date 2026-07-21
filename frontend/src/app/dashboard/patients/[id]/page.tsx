@@ -618,81 +618,101 @@ useEffect(() => {
             </div>
           )}
 
-          {/* ── STOCK TAB ── */}
-          {activeTab === "Stock" && (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 12 }}>
-              {MEDICINES.map((med, i) => {
-                const remaining = [10, 45, 6][i];
-                const total = [60, 60, 8][i];
-                const pct = Math.round((remaining / total) * 100);
-                const status = pct > 30 ? "ok" : pct > 15 ? "low" : "critical";
-                const statusColor = status === "ok" ? "var(--success)" : status === "low" ? "var(--warning)" : "var(--danger)";
-                return (
-                  <motion.div key={i}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: i * 0.08 }}
-                    style={{
-                      background: "var(--bg-surface)",
-                      border: `1px solid color-mix(in srgb, ${statusColor} 20%, var(--border-subtle))`,
-                      borderRadius: 14, padding: 20
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <div style={{ width: 8, height: 8, borderRadius: "50%", background: med.color }} />
-                        <span style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)" }}>
-                          {med.name}
-                        </span>
-                      </div>
-                      <span style={{
-                        fontSize: 10, padding: "2px 8px", borderRadius: 20,
-                        fontFamily: "monospace",
-                        background: `color-mix(in srgb, ${statusColor} 12%, transparent)`,
-                        color: statusColor
-                      }}>
-                        {status.toUpperCase()}
-                      </span>
-                    </div>
-                    <div style={{ marginBottom: 10 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                        <span style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "monospace" }}>
-                          {remaining} of {total} doses
-                        </span>
-                        <span style={{ fontSize: 11, color: statusColor, fontFamily: "monospace" }}>{pct}%</span>
-                      </div>
-                      <div style={{ height: 6, background: "var(--border-subtle)", borderRadius: 3, overflow: "hidden" }}>
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${pct}%` }}
-                          transition={{ duration: 0.8, ease: "easeOut" }}
-                          style={{ height: "100%", background: statusColor, borderRadius: 3 }}
-                        />
-                      </div>
-                    </div>
-                    <div style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "monospace", marginBottom: 12 }}>
-                      ~{Math.floor(remaining / med.times)} days remaining
-                    </div>
-                    {status !== "ok" && (
-                      <motion.a
-                        href={`https://pharmeasy.in/search/all?name=${med.name}`}
-                        target="_blank"
-                        whileHover={{ scale: 1.02 }}
-                        style={{
-                          display: "flex", alignItems: "center", justifyContent: "center",
-                          gap: 6, padding: "8px", borderRadius: 10, fontSize: 12,
-                          textDecoration: "none", fontWeight: 500,
-                          background: "var(--accent-gradient)", color: "var(--text-inverse)"
-                        }}>
-                        <i className="ti ti-shopping-cart" style={{ fontSize: 13 }} />
-                        Reorder on Pharmeasy
-                      </motion.a>
-                    )}
-                  </motion.div>
-                );
-              })}
+         {/* ── STOCK TAB ── */}
+{activeTab === "Stock" && (
+  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 12 }}>
+    {loadingMedicines ? (
+      <div style={{ textAlign: "center", padding: 40, gridColumn: "1 / -1" }}>
+        <motion.div animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          style={{
+            width: 28, height: 28, borderRadius: "50%", margin: "0 auto",
+            border: "2px solid var(--border-subtle)",
+            borderTop: "2px solid var(--accent-primary)"
+          }} />
+      </div>
+    ) : realMedicines.length === 0 ? (
+      <div style={{
+        background: "var(--bg-surface)", border: "1px solid var(--border-subtle)",
+        borderRadius: 14, padding: 48, textAlign: "center", gridColumn: "1 / -1"
+      }}>
+        <i className="ti ti-box" style={{ fontSize: 44, color: "var(--text-muted)", display: "block", marginBottom: 12 }} />
+        <p style={{ fontSize: 14, fontWeight: 500, color: "var(--text-secondary)" }}>
+          No stock data yet
+        </p>
+      </div>
+    ) : (
+      realMedicines.map((med, i) => {
+        const pct = med.total > 0 ? Math.round((med.remaining / med.total) * 100) : 0;
+        const status = pct > 30 ? "ok" : pct > 15 ? "low" : "critical";
+        const statusColor = status === "ok" ? "var(--success)" : status === "low" ? "var(--warning)" : "var(--danger)";
+        return (
+          <motion.div key={i}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: i * 0.08 }}
+            style={{
+              background: "var(--bg-surface)",
+              border: `1px solid color-mix(in srgb, ${statusColor} 20%, var(--border-subtle))`,
+              borderRadius: 14, padding: 20
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: med.color }} />
+                <span style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)" }}>
+                  {med.name}
+                </span>
+              </div>
+              <span style={{
+                fontSize: 10, padding: "2px 8px", borderRadius: 20,
+                fontFamily: "monospace",
+                background: `color-mix(in srgb, ${statusColor} 12%, transparent)`,
+                color: statusColor
+              }}>
+                {status.toUpperCase()}
+              </span>
             </div>
-          )}
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                <span style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "monospace" }}>
+                  {med.remaining} of {med.total} doses
+                </span>
+                <span style={{ fontSize: 11, color: statusColor, fontFamily: "monospace" }}>{pct}%</span>
+              </div>
+              <div style={{ height: 6, background: "var(--border-subtle)", borderRadius: 3, overflow: "hidden" }}>
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${pct}%` }}
+                  transition={{ duration: 0.8, ease: "easeOut" }}
+                  style={{ height: "100%", background: statusColor, borderRadius: 3 }}
+                />
+              </div>
+            </div>
+            <div style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "monospace", marginBottom: 12 }}>
+              ~{med.days_left} days remaining
+            </div>
+            {status !== "ok" && (
+              <motion.a
+                href={`https://pharmeasy.in/search/all?name=${med.name}`}
+                target="_blank"
+                whileHover={{ scale: 1.02 }}
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  gap: 6, padding: "8px", borderRadius: 10, fontSize: 12,
+                  textDecoration: "none", fontWeight: 500,
+                  background: "var(--accent-gradient)", color: "var(--text-inverse)"
+                }}>
+                <i className="ti ti-shopping-cart" style={{ fontSize: 13 }} />
+                Reorder on Pharmeasy
+              </motion.a>
+            )}
+          </motion.div>
+        );
+      })
+    )}
+  </div>
+)}
 
           {/* ── PRESCRIPTIONS TAB ── */}
 {activeTab === "Prescriptions" && (
