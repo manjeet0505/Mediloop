@@ -469,76 +469,83 @@ useEffect(() => {
           )}
 
           {/* ── MEDICINES TAB ── */}
-          {activeTab === "Medicines" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {MEDICINES.map((med, i) => (
-                <motion.div key={i}
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.08 }}
-                  style={{
-                    background: "var(--bg-surface)",
-                    border: `1px solid color-mix(in srgb, ${med.color} 20%, var(--border-subtle))`,
-                    borderRadius: 14, padding: "20px 24px",
-                    display: "flex", alignItems: "center",
-                    justifyContent: "space-between", gap: 20, flexWrap: "wrap"
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                    <div style={{
-                      width: 44, height: 44, borderRadius: 12,
-                      background: `color-mix(in srgb, ${med.color} 15%, transparent)`,
-                      border: `1px solid color-mix(in srgb, ${med.color} 25%, transparent)`,
-                      display: "flex", alignItems: "center", justifyContent: "center"
-                    }}>
-                      <i className="ti ti-pill" style={{ fontSize: 20, color: med.color }} />
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)", marginBottom: 3 }}>
-                        {med.name}
-                      </div>
-                      <div style={{ fontSize: 12, color: "var(--text-muted)", fontFamily: "monospace" }}>
-                        {med.dosage} · {med.frequency} · {med.duration}
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                    {[
-                      { l: "Dosage", v: med.dosage },
-                      { l: "Times/day", v: String(med.times) },
-                      { l: "Duration", v: med.duration },
-                    ].map((s, j) => (
-                      <div key={j} style={{
-                        padding: "8px 14px", borderRadius: 10, textAlign: "center",
-                        background: "var(--bg-overlay)", border: "1px solid var(--border-subtle)"
-                      }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: med.color }}>{s.v}</div>
-                        <div style={{ fontSize: 10, color: "var(--text-muted)", fontFamily: "monospace" }}>{s.l}</div>
-                      </div>
-                    ))}
-                    <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
-                      style={{
-                        padding: "8px 14px", borderRadius: 10, fontSize: 12,
-                        background: "var(--bg-overlay)", border: "1px solid var(--border-subtle)",
-                        color: "var(--text-secondary)", cursor: "pointer"
-                      }}>
-                      <i className="ti ti-edit" style={{ fontSize: 13 }} />
-                    </motion.button>
-                  </div>
-                </motion.div>
-              ))}
-              <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}
-                style={{
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  gap: 8, padding: "14px", borderRadius: 14, fontSize: 13,
-                  border: "1px dashed var(--border-default)", background: "transparent",
-                  color: "var(--accent-primary)", cursor: "pointer", width: "100%"
-                }}>
-                <i className="ti ti-plus" style={{ fontSize: 16 }} />
-                Add Medicine
-              </motion.button>
+{activeTab === "Medicines" && (
+  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+    {loadingMedicines ? (
+      <div style={{ textAlign: "center", padding: 40 }}>
+        <motion.div animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          style={{
+            width: 28, height: 28, borderRadius: "50%", margin: "0 auto",
+            border: "2px solid var(--border-subtle)",
+            borderTop: "2px solid var(--accent-primary)"
+          }} />
+      </div>
+    ) : realMedicines.length === 0 ? (
+      <div style={{
+        background: "var(--bg-surface)", border: "1px solid var(--border-subtle)",
+        borderRadius: 14, padding: 48, textAlign: "center"
+      }}>
+        <i className="ti ti-pill" style={{ fontSize: 44, color: "var(--text-muted)", display: "block", marginBottom: 12 }} />
+        <p style={{ fontSize: 14, fontWeight: 500, color: "var(--text-secondary)" }}>
+          No active medicines
+        </p>
+        <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>
+          Upload a prescription to add medicines automatically
+        </p>
+      </div>
+    ) : (
+      realMedicines.map((med, i) => (
+        <motion.div key={i}
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: i * 0.08 }}
+          style={{
+            background: "var(--bg-surface)",
+            border: `1px solid color-mix(in srgb, ${med.color} 20%, var(--border-subtle))`,
+            borderRadius: 14, padding: "20px 24px",
+            display: "flex", alignItems: "center",
+            justifyContent: "space-between", gap: 20, flexWrap: "wrap"
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: 12,
+              background: `color-mix(in srgb, ${med.color} 15%, transparent)`,
+              border: `1px solid color-mix(in srgb, ${med.color} 25%, transparent)`,
+              display: "flex", alignItems: "center", justifyContent: "center"
+            }}>
+              <i className="ti ti-pill" style={{ fontSize: 20, color: med.color }} />
             </div>
-          )}
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)", marginBottom: 3 }}>
+                {med.name}
+              </div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", fontFamily: "monospace" }}>
+                {med.dosage} · {med.doses_per_day}x/day
+              </div>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            {[
+              { l: "Stock left", v: `${med.remaining}/${med.total}` },
+              { l: "Days left", v: String(med.days_left) },
+              { l: "Adherence 30d", v: `${med.adherence_30d}%` },
+            ].map((s, j) => (
+              <div key={j} style={{
+                padding: "8px 14px", borderRadius: 10, textAlign: "center",
+                background: "var(--bg-overlay)", border: "1px solid var(--border-subtle)"
+              }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: med.color }}>{s.v}</div>
+                <div style={{ fontSize: 10, color: "var(--text-muted)", fontFamily: "monospace" }}>{s.l}</div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      ))
+    )}
+  </div>
+)}
 
           {/* ── DOSE HISTORY TAB ── */}
           {activeTab === "Dose History" && (
