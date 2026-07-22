@@ -12,7 +12,6 @@ import random
 
 router = APIRouter(prefix="/api/v1/patients", tags=["Patient Management"])
 
-# Excludes confusing chars: 0/O, 1/I/L
 INVITE_CODE_CHARS = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"
 COLOR_PALETTE = ["#6366f1", "#06b6d4", "#f59e0b", "#ec4899", "#10b981", "#8b5cf6"]
 
@@ -22,7 +21,6 @@ def color_for(name: str) -> str:
 
 
 async def generate_unique_invite_code(db: AsyncSession) -> str:
-    """Generate a 6-character invite code, retrying on collision."""
     for _ in range(10):
         code = "".join(random.choices(INVITE_CODE_CHARS, k=6))
         result = await db.execute(select(Patient).where(Patient.invite_code == code))
@@ -47,7 +45,6 @@ async def create_patient(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Create a new patient under the logged-in clinic"""
     validate_name(data.full_name)
     validate_phone(data.phone)
     if data.family_phone:
@@ -79,12 +76,54 @@ async def list_patients(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """List all patients belonging to the logged-in clinic"""
     result = await db.execute(
         select(Patient).where(Patient.clinic_id == current_user.id).order_by(Patient.created_at.desc())
     )
     patients = result.scalars().all()
     return [PatientResponse.model_validate(p) for p in patients]
+
+
+@router.get("/stock/all")
+async def get_all_stock(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Clinic-wide stock view — every medicine across every active patient,
+    sorted by urgency (fewest days remaining first).
+    """
+    if current_user.role != "clinic":
+        raise HTTPException(status_code=403, detail="Clinic access only")
+
+    result = await db.execute(
+        select(Patient).where(Patient.clinic_id == current_user.id, Patient.is_active == True)
+    )
+    patients = result.scalars().all()
+    patient_map = {p.id: p.full_name for p in patients}
+
+    if not patient_map:
+        return []
+
+    result = await db.execute(select(StockLevel).where(StockLevel.patient_id.in_(patient_map.keys())))
+    stocks = result.scalars().all()
+
+    output = []
+    for s in stocks:
+        remaining = max(s.total_quantity - s.doses_taken, 0)
+        days_left = remaining // s.doses_per_day if s.doses_per_day > 0 else remaining
+        output.append({
+            "patient_id": s.patient_id,
+            "patient_name": patient_map.get(s.patient_id, "Unknown"),
+            "medicine_name": s.medicine_name,
+            "dosage": s.dosage or "",
+            "remaining": remaining,
+            "total": s.total_quantity,
+            "days_left": days_left,
+            "color": color_for(s.medicine_name),
+        })
+
+    output.sort(key=lambda x: x["days_left"])
+    return output
 
 
 @router.get("/{patient_id}", response_model=PatientResponse)
@@ -93,7 +132,6 @@ async def get_patient(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Get a specific patient — only if it belongs to the logged-in clinic"""
     patient = await get_owned_patient(patient_id, current_user, db)
     return PatientResponse.model_validate(patient)
 
@@ -104,11 +142,6 @@ async def get_patient_medicines(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """
-    Clinic-side view of a patient's active medicines — dosage, stock, and
-    30-day adherence per medicine. Mirrors the patient portal's own
-    /me/medicines/list but scoped by clinic ownership instead of self.
-    """
     patient = await get_owned_patient(patient_id, current_user, db)
 
     result = await db.execute(select(StockLevel).where(StockLevel.patient_id == patient.id))
@@ -159,7 +192,6 @@ async def update_patient(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Update a patient's details"""
     patient = await get_owned_patient(patient_id, current_user, db)
 
     validate_name(data.full_name)
@@ -183,7 +215,6 @@ async def delete_patient(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Soft-delete a patient (deactivate)"""
     patient = await get_owned_patient(patient_id, current_user, db)
     patient.is_active = False
     await db.commit()
@@ -196,7 +227,6 @@ async def regenerate_invite_code(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Generate a fresh invite code for a patient (e.g. if the old one expired or was shared by mistake)"""
     patient = await get_owned_patient(patient_id, current_user, db)
     patient.invite_code = await generate_unique_invite_code(db)
     await db.commit()
