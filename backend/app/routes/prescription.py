@@ -13,7 +13,6 @@ from app.utils.auth import get_current_user
 
 router = APIRouter(prefix="/api/v1/prescription", tags=["Prescription Agent"])
 
-# times_per_day -> default clock times, same convention used across the app
 DOSE_TIMES = {
     1: ["09:00"],
     2: ["09:00", "21:00"],
@@ -23,7 +22,6 @@ DOSE_TIMES = {
 
 
 def parse_duration_days(duration_str: str) -> int:
-    """'7 days' -> 7, '2 weeks' -> 14, '1 month' -> 30. Falls back to 30 if unparseable."""
     if not duration_str:
         return 30
     match = re.search(r"(\d+)", duration_str)
@@ -39,17 +37,11 @@ def parse_duration_days(duration_str: str) -> int:
 
 
 async def get_owned_patient(patient_id: str, current_user: User, db: AsyncSession) -> Patient:
-    if current_user.role == "clinic":
-        result = await db.execute(
-            select(Patient).where(Patient.id == patient_id, Patient.clinic_id == current_user.id)
-        )
-    elif current_user.role == "patient":
-        result = await db.execute(
-            select(Patient).where(Patient.id == patient_id, Patient.user_id == current_user.id)
-        )
-    else:
-        raise HTTPException(status_code=403, detail="Access denied")
-
+    if current_user.role != "clinic":
+        raise HTTPException(status_code=403, detail="Clinic access only")
+    result = await db.execute(
+        select(Patient).where(Patient.id == patient_id, Patient.clinic_id == current_user.id)
+    )
     patient = result.scalar_one_or_none()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
@@ -63,11 +55,7 @@ async def parse_prescription(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Agent 1 — upload a prescription image, get back a structured, EDITABLE
-    care plan. Nothing is saved yet — call /confirm to persist after review.
-    """
-    await get_owned_patient(patient_id, current_user, db)  # ownership check, raises if invalid
+    await get_owned_patient(patient_id, current_user, db)
 
     allowed_types = ["image/jpeg", "image/png", "image/jpg", "application/pdf"]
     if file.content_type not in allowed_types:
@@ -80,7 +68,6 @@ async def parse_prescription(
 
 @router.post("/parse-text")
 async def parse_prescription_text(text: str):
-    """Test Agent 1 with raw text directly — no image, no auth, dev convenience only."""
     try:
         result = await parse_with_openai(text)
         return {"success": True, "result": result, "llm_used": "openai"}
@@ -94,18 +81,11 @@ async def confirm_prescription(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Persists a reviewed/edited care plan:
-      - Prescription record (structured JSON, so it can be listed/rendered later)
-      - Today's DoseEvent rows per medicine (the scheduler carries the pattern forward daily)
-      - StockLevel upsert per medicine (duration x frequency = total quantity)
-    """
     patient = await get_owned_patient(data.patient_id, current_user, db)
 
     if not data.medications:
         raise HTTPException(status_code=400, detail="At least one medication is required")
 
-    # 1) Prescription audit record — store medications as structured JSON
     medications_json = json.dumps([m.model_dump() for m in data.medications])
     prescription = Prescription(
         id=str(uuid.uuid4()),
@@ -193,7 +173,7 @@ async def list_prescriptions(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Prescription history for a patient, newest first — for the Prescriptions tab."""
+    """Prescription history for a single patient — for the patient detail tab."""
     await get_owned_patient(patient_id, current_user, db)
 
     result = await db.execute(
@@ -208,10 +188,54 @@ async def list_prescriptions(
         try:
             medications = json.loads(p.care_plan) if p.care_plan else []
         except (json.JSONDecodeError, TypeError):
-            medications = []  # legacy plain-text rows from before this change
+            medications = []
 
         output.append({
             "id": p.id,
+            "doctor_name": p.doctor_name,
+            "created_at": p.created_at.isoformat() if p.created_at else None,
+            "safety_flag": p.safety_flag,
+            "safety_note": p.safety_note,
+            "medications": medications,
+        })
+
+    return output
+
+
+@router.get("/clinic/all")
+async def list_clinic_prescriptions(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Prescription history across every patient in the clinic — newest first."""
+    if current_user.role != "clinic":
+        raise HTTPException(status_code=403, detail="Clinic access only")
+
+    result = await db.execute(select(Patient).where(Patient.clinic_id == current_user.id))
+    patients = result.scalars().all()
+    patient_map = {p.id: p.full_name for p in patients}
+
+    if not patient_map:
+        return []
+
+    result = await db.execute(
+        select(Prescription)
+        .where(Prescription.patient_id.in_(patient_map.keys()))
+        .order_by(Prescription.created_at.desc())
+    )
+    prescriptions = result.scalars().all()
+
+    output = []
+    for p in prescriptions:
+        try:
+            medications = json.loads(p.care_plan) if p.care_plan else []
+        except (json.JSONDecodeError, TypeError):
+            medications = []
+
+        output.append({
+            "id": p.id,
+            "patient_id": p.patient_id,
+            "patient_name": patient_map.get(p.patient_id, "Unknown"),
             "doctor_name": p.doctor_name,
             "created_at": p.created_at.isoformat() if p.created_at else None,
             "safety_flag": p.safety_flag,
