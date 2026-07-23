@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, date
 from app.database.connection import get_db
 from app.database.models import User, Patient, DoseEvent, StockLevel
 from app.database.schemas import PatientCreate, PatientResponse
@@ -90,7 +90,8 @@ async def get_all_stock(
 ):
     """
     Clinic-wide stock view — every medicine across every active patient,
-    sorted by urgency (fewest days remaining first).
+    sorted by urgency, with a 14-day depletion trend derived from real
+    taken-dose history (for the sparkline).
     """
     if current_user.role != "clinic":
         raise HTTPException(status_code=403, detail="Clinic access only")
@@ -107,10 +108,37 @@ async def get_all_stock(
     result = await db.execute(select(StockLevel).where(StockLevel.patient_id.in_(patient_map.keys())))
     stocks = result.scalars().all()
 
+    window_start_date = date.today() - timedelta(days=13)
+    window_start_dt = datetime.combine(window_start_date, datetime.min.time(), tzinfo=timezone.utc)
+
     output = []
     for s in stocks:
         remaining = max(s.total_quantity - s.doses_taken, 0)
         days_left = remaining // s.doses_per_day if s.doses_per_day > 0 else remaining
+
+        # trend: reconstruct daily remaining count over the last 14 days from taken-dose history
+        result = await db.execute(
+            select(DoseEvent).where(
+                DoseEvent.patient_id == s.patient_id,
+                DoseEvent.medicine_name == s.medicine_name,
+                DoseEvent.status == "taken",
+                DoseEvent.taken_at >= window_start_dt,
+            )
+        )
+        taken_events = result.scalars().all()
+        daily_taken: dict = {}
+        for d in taken_events:
+            day = d.taken_at.date()
+            daily_taken[day] = daily_taken.get(day, 0) + 1
+
+        total_taken_in_window = sum(daily_taken.values())
+        running = remaining + total_taken_in_window
+        trend = []
+        for i in range(14):
+            day = window_start_date + timedelta(days=i)
+            running -= daily_taken.get(day, 0)
+            trend.append(max(running, 0))
+
         output.append({
             "patient_id": s.patient_id,
             "patient_name": patient_map.get(s.patient_id, "Unknown"),
@@ -119,6 +147,7 @@ async def get_all_stock(
             "remaining": remaining,
             "total": s.total_quantity,
             "days_left": days_left,
+            "trend": trend,
             "color": color_for(s.medicine_name),
         })
 
