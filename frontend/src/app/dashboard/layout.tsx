@@ -4,6 +4,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { authService } from "@/lib/auth";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import ClinicAmbientBackground from "@/components/ClinicAmbientBackground";
 
 const NAV = [
   { label: "Overview", href: "/dashboard", icon: "ti-layout-dashboard" },
@@ -58,7 +59,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       display: "flex", minHeight: "100vh",
       background: "var(--bg-page)", color: "var(--text-primary)"
     }}>
-
+        <ClinicAmbientBackground />
       {/* ── Sidebar ── */}
       <motion.aside
         animate={{ width: sidebarOpen ? 240 : 64 }}
@@ -274,7 +275,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         flex: 1,
         marginLeft: sidebarOpen ? 240 : 64,
         transition: "margin-left 0.3s",
-        display: "flex", flexDirection: "column", minHeight: "100vh"
+        display: "flex", flexDirection: "column", minHeight: "100vh",
+        position: "relative", zIndex: 1
       }}>
 
         {/* Topbar */}
