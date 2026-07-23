@@ -38,6 +38,7 @@ class ConfirmMedicationItem(BaseModel):
     duration: str
     instructions: Optional[str] = ""
     times_per_day: int = 1
+    confidence: float = 1.0  # carried through from /parse so history can show it later
 
 
 class ConfirmPrescriptionRequest(BaseModel):
