@@ -173,6 +173,7 @@ export default function UploadPrescriptionModal({ isOpen, patientId, onClose, on
             duration: m.duration,
             instructions: m.instructions,
             times_per_day: Number(m.times_per_day) || 1,
+            confidence: m.confidence ?? 1.0,
           })),
         }),
       });
@@ -212,7 +213,6 @@ export default function UploadPrescriptionModal({ isOpen, patientId, onClose, on
               borderRadius: 16, padding: 28, maxHeight: "88vh", overflowY: "auto",
             }}
           >
-            {/* ── UPLOAD STEP ── */}
             {step === "upload" && (
               <>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
@@ -280,7 +280,6 @@ export default function UploadPrescriptionModal({ isOpen, patientId, onClose, on
               </>
             )}
 
-            {/* ── PARSING STEP ── */}
             {step === "parsing" && (
               <div style={{ textAlign: "center", padding: "30px 0" }}>
                 <motion.div
@@ -302,7 +301,6 @@ export default function UploadPrescriptionModal({ isOpen, patientId, onClose, on
               </div>
             )}
 
-            {/* ── REVIEW STEP ── */}
             {step === "review" && (
               <>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
@@ -398,7 +396,6 @@ export default function UploadPrescriptionModal({ isOpen, patientId, onClose, on
               </>
             )}
 
-            {/* ── SAVING STEP ── */}
             {step === "saving" && (
               <div style={{ textAlign: "center", padding: "30px 0" }}>
                 <motion.div
@@ -413,7 +410,6 @@ export default function UploadPrescriptionModal({ isOpen, patientId, onClose, on
               </div>
             )}
 
-            {/* ── DONE STEP ── */}
             {step === "done" && (
               <div style={{ textAlign: "center", padding: "20px 0" }}>
                 <motion.div
