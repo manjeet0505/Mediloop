@@ -15,9 +15,10 @@ async function fetchWithAuth(url: string, token: string) {
 
 function CountUp({ to, duration = 1000, decimals = 0 }: { to: number; duration?: number; decimals?: number }) {
   const [val, setVal] = useState(0);
-  const started = useRef(false);
+  const prevTo = useRef<number | null>(null);
   useEffect(() => {
-    if (started.current) return; started.current = true;
+    if (prevTo.current === to) return;
+    prevTo.current = to;
     const start = Date.now();
     const tick = () => {
       const progress = Math.min((Date.now() - start) / duration, 1);
@@ -26,7 +27,7 @@ function CountUp({ to, duration = 1000, decimals = 0 }: { to: number; duration?:
       if (progress < 1) requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
-  }, [to]);
+  }, [to, duration]);
   return <>{decimals ? val.toFixed(decimals) : Math.round(val)}</>;
 }
 
