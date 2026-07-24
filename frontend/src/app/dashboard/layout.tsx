@@ -1,10 +1,12 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { authService } from "@/lib/auth";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import ClinicAmbientBackground from "@/components/ClinicAmbientBackground";
+
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 const NAV = [
   { label: "Overview", href: "/dashboard", icon: "ti-layout-dashboard" },
@@ -18,6 +20,216 @@ const NAV = [
 const BOTTOM_NAV = [
   { label: "Settings", href: "/dashboard/settings", icon: "ti-settings" },
 ];
+
+function ProfileDropdown({ user }: { user: any }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
+
+  const initials = user?.full_name?.split(" ").map((w: string) => w[0]).slice(0, 2).join("").toUpperCase() ?? "MK";
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <motion.button
+        whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: 32, height: 32, borderRadius: "50%", cursor: "pointer",
+          background: "var(--accent-gradient)", border: "none",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 11, fontWeight: 700, color: "var(--text-inverse)",
+        }}
+      >
+        {initials}
+      </motion.button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -6, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.96 }}
+            transition={{ duration: 0.15 }}
+            style={{
+              position: "absolute", top: "calc(100% + 10px)", right: 0,
+              width: 220, borderRadius: 12, zIndex: 50, overflow: "hidden",
+              background: "var(--bg-surface)", border: "1px solid var(--border-subtle)",
+              boxShadow: "0 16px 40px -12px rgba(0,0,0,0.4)",
+            }}
+          >
+            <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--border-subtle)" }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", marginBottom: 2 }}>
+                {user?.full_name ?? "Clinic Admin"}
+              </div>
+              <div style={{ fontSize: 11.5, color: "var(--text-muted)" }}>{user?.email}</div>
+              {user?.clinic_name && (
+                <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>{user.clinic_name}</div>
+              )}
+            </div>
+            <div style={{ padding: 6 }}>
+              {[
+                { label: "Settings", icon: "ti-settings", href: "/dashboard/settings" },
+              ].map((item, i) => (
+                <a key={i} href={item.href} style={{
+                  display: "flex", alignItems: "center", gap: 8,
+                  padding: "9px 10px", borderRadius: 8,
+                  fontSize: 13, color: "var(--text-secondary)", textDecoration: "none",
+                }}>
+                  <i className={`ti ${item.icon}`} style={{ fontSize: 14 }} />
+                  {item.label}
+                </a>
+              ))}
+              <div style={{ height: 1, background: "var(--border-subtle)", margin: "4px 0" }} />
+              <button onClick={() => authService.logout()} style={{
+                display: "flex", alignItems: "center", gap: 8,
+                width: "100%", padding: "9px 10px", borderRadius: 8,
+                border: "none", background: "transparent", fontSize: 13,
+                color: "var(--danger)", cursor: "pointer", textAlign: "left", fontFamily: "inherit",
+              }}>
+                <i className="ti ti-logout" style={{ fontSize: 14 }} />
+                Log out
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function TopSearch() {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [patients, setPatients] = useState<any[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setOpen(true);
+        setTimeout(() => inputRef.current?.focus(), 50);
+      }
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
+
+  const ensureLoaded = () => {
+    if (loaded) return;
+    const token = authService.getToken();
+    if (!token) return;
+    fetch(`${API}/api/v1/patients/`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => { setPatients(Array.isArray(d) ? d : []); setLoaded(true); })
+      .catch(() => setLoaded(true));
+  };
+
+  const results = query.trim()
+    ? patients.filter(p =>
+        p.full_name.toLowerCase().includes(query.toLowerCase()) ||
+        p.phone.includes(query)
+      ).slice(0, 6)
+    : [];
+
+  return (
+    <div ref={wrapperRef} style={{ position: "relative" }}>
+      <div
+        onClick={() => { setOpen(true); ensureLoaded(); setTimeout(() => inputRef.current?.focus(), 50); }}
+        style={{
+          display: "flex", alignItems: "center", gap: 8,
+          padding: "7px 14px", borderRadius: 8, minWidth: 200,
+          background: "var(--bg-overlay)",
+          border: `1px solid ${open ? "var(--accent-primary)" : "var(--border-subtle)"}`,
+          fontSize: 12, color: "var(--text-muted)", cursor: "text",
+          transition: "border-color 0.15s",
+        }}
+      >
+        <i className="ti ti-search" style={{ fontSize: 14, flexShrink: 0 }} />
+        {open ? (
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Search patients..."
+            style={{
+              flex: 1, background: "transparent", border: "none", outline: "none",
+              fontSize: 12, color: "var(--text-primary)", fontFamily: "inherit",
+            }}
+          />
+        ) : (
+          <span>Search...</span>
+        )}
+        <span style={{
+          fontSize: 10, padding: "1px 5px", borderRadius: 4,
+          background: "var(--bg-hover)", border: "1px solid var(--border-subtle)",
+          fontFamily: "monospace", color: "var(--text-muted)", flexShrink: 0,
+        }}>⌘K</span>
+      </div>
+
+      <AnimatePresence>
+        {open && query.trim() && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.15 }}
+            style={{
+              position: "absolute", top: "calc(100% + 8px)", left: 0, right: 0,
+              background: "var(--bg-surface)", border: "1px solid var(--border-subtle)",
+              borderRadius: 12, overflow: "hidden", zIndex: 60,
+              boxShadow: "0 16px 40px -12px rgba(0,0,0,0.4)",
+            }}
+          >
+            {results.length === 0 ? (
+              <div style={{ padding: 16, fontSize: 12, color: "var(--text-muted)", textAlign: "center" }}>
+                No patients found
+              </div>
+            ) : (
+              results.map(p => (
+                <a key={p.id} href={`/dashboard/patients/${p.id}`}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    padding: "10px 12px", textDecoration: "none",
+                    borderBottom: "1px solid var(--border-subtle)",
+                  }}
+                >
+                  <div style={{
+                    width: 26, height: 26, borderRadius: "50%",
+                    background: "color-mix(in srgb, var(--accent-primary) 15%, transparent)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 10, fontWeight: 600, color: "var(--accent-primary)", flexShrink: 0,
+                  }}>
+                    {p.full_name.split(" ").map((w: string) => w[0]).slice(0, 2).join("")}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 12.5, color: "var(--text-primary)" }}>{p.full_name}</div>
+                    <div style={{ fontSize: 10.5, color: "var(--text-muted)" }}>{p.phone}</div>
+                  </div>
+                </a>
+              ))
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -289,7 +501,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           borderBottom: "1px solid var(--border-subtle)",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            {/* Breadcrumb */}
             <span style={{ fontSize: 13, color: "var(--text-muted)" }}>MedLoop</span>
             <span style={{ fontSize: 13, color: "var(--text-muted)" }}>/</span>
             <span style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)" }}>
@@ -298,25 +509,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {/* Search */}
-            <div style={{
-              display: "flex", alignItems: "center", gap: 8,
-              padding: "7px 14px", borderRadius: 8,
-              background: "var(--bg-overlay)",
-              border: "1px solid var(--border-subtle)",
-              fontSize: 12, color: "var(--text-muted)", cursor: "pointer"
-            }}>
-              <i className="ti ti-search" style={{ fontSize: 14 }} />
-              <span>Search...</span>
-              <span style={{
-                fontSize: 10, padding: "1px 5px", borderRadius: 4,
-                background: "var(--bg-hover)",
-                border: "1px solid var(--border-subtle)",
-                fontFamily: "monospace", color: "var(--text-muted)"
-              }}>⌘K</span>
-            </div>
+            <TopSearch />
 
-            {/* Notifications */}
             <motion.button
               whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
               style={{
@@ -337,6 +531,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </motion.button>
 
             <ThemeToggle />
+
+            <div style={{ width: 1, height: 20, background: "var(--border-subtle)" }} />
+
+            <ProfileDropdown user={user} />
           </div>
         </header>
 
