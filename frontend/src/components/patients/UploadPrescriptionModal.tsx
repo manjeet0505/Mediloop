@@ -2,6 +2,7 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { authService } from "@/lib/auth";
+import { MagneticButton } from "@/components/ui/PremiumUI";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -23,12 +24,7 @@ function ConfidenceBadge({ value }: { value: number }) {
   const pct = Math.round(value * 100);
   const color = pct >= 90 ? "var(--success)" : pct >= 70 ? "var(--warning)" : "var(--danger)";
   return (
-    <span style={{
-      fontSize: 10, padding: "2px 7px", borderRadius: 10,
-      fontFamily: "monospace", fontWeight: 500,
-      background: `color-mix(in srgb, ${color} 12%, transparent)`,
-      color, border: `1px solid color-mix(in srgb, ${color} 25%, transparent)`,
-    }}>
+    <span style={{ fontSize: 10, color, fontFamily: "monospace" }}>
       {pct}% sure
     </span>
   );
@@ -37,22 +33,26 @@ function ConfidenceBadge({ value }: { value: number }) {
 function EditableField({ label, value, onChange, small = false }: {
   label: string; value: string; onChange: (v: string) => void; small?: boolean;
 }) {
+  const [focused, setFocused] = useState(false);
   return (
     <div>
       <label style={{
         display: "block", fontSize: 10, color: "var(--text-muted)",
-        marginBottom: 4, fontFamily: "monospace", textTransform: "uppercase",
+        marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.04em",
       }}>
         {label}
       </label>
       <input
         value={value}
         onChange={e => onChange(e.target.value)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         style={{
-          width: "100%", padding: small ? "6px 8px" : "8px 10px",
-          borderRadius: 6, fontSize: 12.5,
-          background: "var(--bg-surface)", border: "1px solid var(--border-subtle)",
+          width: "100%", padding: small ? "5px 2px" : "6px 2px",
+          fontSize: 12.5, background: "transparent",
+          border: "none", borderBottom: `1.5px solid ${focused ? "var(--accent-primary)" : "var(--border-subtle)"}`,
           color: "var(--text-primary)", outline: "none", fontFamily: "inherit",
+          transition: "border-color 0.15s",
         }}
       />
     </div>
@@ -231,7 +231,7 @@ export default function UploadPrescriptionModal({ isOpen, patientId, onClose, on
                     border: `1.5px dashed ${dragActive ? "var(--accent-primary)" : "var(--border-default)"}`,
                     borderRadius: 14, padding: previewUrl ? 12 : 40,
                     textAlign: "center", cursor: "pointer",
-                    background: dragActive ? "color-mix(in srgb, var(--accent-primary) 6%, transparent)" : "var(--bg-overlay)",
+                    background: dragActive ? "color-mix(in srgb, var(--accent-primary) 6%, transparent)" : "transparent",
                     transition: "all 0.15s",
                   }}
                 >
@@ -253,30 +253,20 @@ export default function UploadPrescriptionModal({ isOpen, patientId, onClose, on
                 </div>
 
                 {error && (
-                  <div style={{
-                    marginTop: 14, padding: "10px 12px", borderRadius: 8,
-                    background: "color-mix(in srgb, var(--danger) 10%, transparent)",
-                    border: "1px solid color-mix(in srgb, var(--danger) 25%, transparent)",
-                    fontSize: 12, color: "var(--danger)",
-                  }}>
+                  <div style={{ marginTop: 14, fontSize: 12, color: "var(--danger)" }}>
                     {error}
                   </div>
                 )}
 
-                <motion.button
-                  whileHover={{ scale: file ? 1.01 : 1 }} whileTap={{ scale: file ? 0.98 : 1 }}
-                  onClick={startParse}
-                  disabled={!file}
-                  style={{
-                    width: "100%", padding: "12px", borderRadius: 10, marginTop: 18,
-                    fontSize: 13.5, fontWeight: 600, border: "none",
-                    background: file ? "var(--accent-gradient)" : "var(--bg-overlay)",
-                    color: file ? "var(--text-inverse)" : "var(--text-muted)",
-                    cursor: file ? "pointer" : "default",
-                  }}
-                >
-                  Parse with AI
-                </motion.button>
+                <div style={{ marginTop: 18 }}>
+                  <MagneticButton
+                    variant="primary"
+                    onClick={file ? startParse : () => {}}
+                    style={{ width: "100%", justifyContent: "center", padding: "12px", opacity: file ? 1 : 0.5 }}
+                  >
+                    Parse with AI
+                  </MagneticButton>
+                </div>
               </>
             )}
 
@@ -315,27 +305,26 @@ export default function UploadPrescriptionModal({ isOpen, patientId, onClose, on
 
                 {safetyFlag && (
                   <div style={{
-                    display: "flex", gap: 8, padding: "10px 12px", borderRadius: 8, marginBottom: 16,
-                    background: "color-mix(in srgb, var(--warning) 10%, transparent)",
-                    border: "1px solid color-mix(in srgb, var(--warning) 25%, transparent)",
+                    display: "flex", gap: 8, padding: "10px 0", marginBottom: 16,
+                    borderBottom: "1px solid var(--border-subtle)",
                   }}>
                     <i className="ti ti-alert-triangle" style={{ fontSize: 15, color: "var(--warning)", flexShrink: 0 }} />
                     <span style={{ fontSize: 12, color: "var(--warning)" }}>{safetyNote}</span>
                   </div>
                 )}
 
-                <div style={{ marginBottom: 16 }}>
+                <div style={{ marginBottom: 18 }}>
                   <EditableField label="Doctor Name" value={doctorName} onChange={setDoctorName} />
                 </div>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 8 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 8 }}>
                   {medications.map((med, i) => (
                     <motion.div key={i}
                       initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.05 }}
                       style={{
-                        border: "1px solid var(--border-subtle)", borderRadius: 12, padding: 14,
-                        background: "var(--bg-overlay)",
+                        padding: "14px 0",
+                        borderBottom: i < medications.length - 1 ? "1px solid var(--border-subtle)" : "none",
                       }}
                     >
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
@@ -347,11 +336,11 @@ export default function UploadPrescriptionModal({ isOpen, patientId, onClose, on
                           <i className="ti ti-trash" style={{ fontSize: 14 }} />
                         </button>
                       </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 10 }}>
                         <EditableField label="Name" value={med.medicine_name} onChange={v => updateMed(i, "medicine_name", v)} small />
                         <EditableField label="Dosage" value={med.dosage} onChange={v => updateMed(i, "dosage", v)} small />
                       </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
                         <EditableField label="Frequency" value={med.frequency} onChange={v => updateMed(i, "frequency", v)} small />
                         <EditableField label="Duration" value={med.duration || "30 days"} onChange={v => updateMed(i, "duration", v)} small />
                         <EditableField label="Times/day" value={String(med.times_per_day)} onChange={v => updateMed(i, "times_per_day", v)} small />
@@ -361,37 +350,22 @@ export default function UploadPrescriptionModal({ isOpen, patientId, onClose, on
                 </div>
 
                 {error && (
-                  <div style={{
-                    marginTop: 12, padding: "10px 12px", borderRadius: 8,
-                    background: "color-mix(in srgb, var(--danger) 10%, transparent)",
-                    border: "1px solid color-mix(in srgb, var(--danger) 25%, transparent)",
-                    fontSize: 12, color: "var(--danger)",
-                  }}>
+                  <div style={{ marginTop: 12, fontSize: 12, color: "var(--danger)" }}>
                     {error}
                   </div>
                 )}
 
-                <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
-                  <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
-                    onClick={handleClose}
-                    style={{
-                      flex: 1, padding: "12px", borderRadius: 10, fontSize: 13, fontWeight: 500,
-                      border: "1px solid var(--border-default)", background: "transparent",
-                      color: "var(--text-secondary)", cursor: "pointer",
-                    }}>
+                <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
+                  <MagneticButton variant="ghost" onClick={handleClose} style={{ flex: 1, justifyContent: "center", padding: "12px" }}>
                     Cancel
-                  </motion.button>
-                  <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
-                    onClick={handleConfirm}
-                    disabled={medications.length === 0}
-                    style={{
-                      flex: 2, padding: "12px", borderRadius: 10, fontSize: 13.5, fontWeight: 600,
-                      border: "none", cursor: "pointer",
-                      background: medications.length ? "var(--accent-gradient)" : "var(--bg-overlay)",
-                      color: medications.length ? "var(--text-inverse)" : "var(--text-muted)",
-                    }}>
+                  </MagneticButton>
+                  <MagneticButton
+                    variant="primary"
+                    onClick={medications.length ? handleConfirm : () => {}}
+                    style={{ flex: 2, justifyContent: "center", padding: "12px", opacity: medications.length ? 1 : 0.5 }}
+                  >
                     Confirm & Save ({medications.length} medicine{medications.length !== 1 ? "s" : ""})
-                  </motion.button>
+                  </MagneticButton>
                 </div>
               </>
             )}
@@ -430,15 +404,9 @@ export default function UploadPrescriptionModal({ isOpen, patientId, onClose, on
                 <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 24 }}>
                   Dose reminders are now scheduled and will run automatically
                 </p>
-                <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
-                  onClick={handleClose}
-                  style={{
-                    width: "100%", padding: "11px", borderRadius: 10, fontSize: 13, fontWeight: 500,
-                    border: "1px solid var(--border-default)", background: "transparent",
-                    color: "var(--text-secondary)", cursor: "pointer",
-                  }}>
+                <MagneticButton variant="ghost" onClick={handleClose} style={{ width: "100%", justifyContent: "center", padding: "11px" }}>
                   Done
-                </motion.button>
+                </MagneticButton>
               </div>
             )}
           </motion.div>
