@@ -1,34 +1,23 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { authService } from "@/lib/auth";
 import AddPatientModal from "@/components/patients/AddPatientModal";
+import {
+  EASE,
+  CountUp,
+  MouseGlow,
+  TiltCard,
+  MagneticButton,
+  RotatingRingAvatar,
+} from "@/components/ui/PremiumUI";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-const EASE = [0.16, 1, 0.3, 1] as const;
 
 async function fetchWithAuth(url: string, token: string) {
   const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
   if (!res.ok) throw new Error(`${res.status}`);
   return res.json();
-}
-
-function CountUp({ to, duration = 1000, decimals = 0 }: { to: number; duration?: number; decimals?: number }) {
-  const [val, setVal] = useState(0);
-  const prevTo = useRef<number | null>(null);
-  useEffect(() => {
-    if (prevTo.current === to) return;
-    prevTo.current = to;
-    const start = Date.now();
-    const tick = () => {
-      const progress = Math.min((Date.now() - start) / duration, 1);
-      const ease = 1 - Math.pow(1 - progress, 3);
-      setVal(ease * to);
-      if (progress < 1) requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-  }, [to, duration]);
-  return <>{decimals ? val.toFixed(decimals) : Math.round(val)}</>;
 }
 
 function AdherenceGauge({ value }: { value: number }) {
@@ -70,28 +59,30 @@ function StatChip({ icon, label, value, color, index }: {
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.25 + index * 0.07, duration: 0.5, ease: EASE }}
-      whileHover={{ y: -3, boxShadow: `0 14px 30px -10px color-mix(in srgb, ${color} 30%, transparent)` }}
-      style={{
-        flex: 1, minWidth: 150,
-        background: "var(--bg-surface)",
-        border: "1px solid var(--border-subtle)",
-        borderRadius: 14, padding: "16px 18px",
-        cursor: "default",
-      }}
+      style={{ flex: 1, minWidth: 150 }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-        <div style={{
-          width: 30, height: 30, borderRadius: 9,
-          background: `color-mix(in srgb, ${color} 15%, transparent)`,
-          display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-        }}>
-          <i className={`ti ${icon}`} style={{ fontSize: 15, color }} />
+      <TiltCard
+        style={{
+          background: "var(--bg-surface)",
+          border: "1px solid var(--border-subtle)",
+          borderRadius: 14, padding: "16px 18px",
+          cursor: "default",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+          <div style={{
+            width: 30, height: 30, borderRadius: 9,
+            background: `color-mix(in srgb, ${color} 15%, transparent)`,
+            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+          }}>
+            <i className={`ti ${icon}`} style={{ fontSize: 15, color }} />
+          </div>
+          <span style={{ fontSize: 12.5, color: "var(--text-secondary)" }}>{label}</span>
         </div>
-        <span style={{ fontSize: 12.5, color: "var(--text-secondary)" }}>{label}</span>
-      </div>
-      <div style={{ fontSize: 26, fontWeight: 700, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
-        {typeof value === "number" ? <CountUp to={value} /> : value}
-      </div>
+        <div style={{ fontSize: 26, fontWeight: 700, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
+          {typeof value === "number" ? <CountUp to={value} /> : value}
+        </div>
+      </TiltCard>
     </motion.div>
   );
 }
@@ -99,6 +90,7 @@ function StatChip({ icon, label, value, color, index }: {
 function PatientRow({ p, index }: { p: any; index: number }) {
   const statusColor = p.status === "critical" ? "var(--danger)" : p.status === "warning" ? "var(--warning)" : p.status === "new" ? "var(--accent-primary)" : "var(--success)";
   const adherenceColor = p.adherence >= 80 ? "var(--success)" : p.adherence >= 60 ? "var(--warning)" : "var(--danger)";
+  const isLive = p.status === "active" || p.status === "new";
 
   return (
     <motion.div
@@ -115,17 +107,7 @@ function PatientRow({ p, index }: { p: any; index: number }) {
         marginBottom: 2,
       }}
     >
-      <div style={{ position: "relative", flexShrink: 0 }}>
-        <div style={{
-          width: 36, height: 36, borderRadius: "50%",
-          background: `linear-gradient(135deg, color-mix(in srgb, var(--accent-primary) 25%, transparent), color-mix(in srgb, ${statusColor} 20%, transparent))`,
-          border: `1.5px solid color-mix(in srgb, ${statusColor} 35%, transparent)`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 12, fontWeight: 700, color: "var(--text-primary)",
-        }}>
-          {p.full_name.split(" ").map((w: string) => w[0]).slice(0, 2).join("")}
-        </div>
-      </div>
+      <RotatingRingAvatar name={p.full_name} accent={isLive} size={36} />
 
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--text-primary)", marginBottom: 2 }}>
@@ -171,45 +153,47 @@ function AgentCard({ name, status, metric, metricLabel, color, index }: {
       initial={{ opacity: 0, scale: 0.94 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: 0.5 + index * 0.06, duration: 0.4, ease: EASE }}
-      whileHover={isLive ? { y: -3, boxShadow: `0 14px 26px -10px color-mix(in srgb, ${color} 35%, transparent)` } : {}}
-      style={{
-        position: "relative", padding: "15px", borderRadius: 12, overflow: "hidden",
-        background: "var(--bg-overlay)",
-        border: `1px solid color-mix(in srgb, ${color} ${isLive ? 25 : 12}%, var(--border-subtle))`,
-        opacity: isLive ? 1 : 0.7,
-      }}
     >
-      {isLive && (
-        <motion.div
-          animate={{ opacity: [0.06, 0.14, 0.06] }}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-          style={{
-            position: "absolute", top: -20, right: -20, width: 70, height: 70,
-            borderRadius: "50%", background: color, filter: "blur(24px)", pointerEvents: "none",
-          }}
-        />
-      )}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, position: "relative" }}>
-        <span style={{ fontSize: 11.5, color: "var(--text-secondary)", fontWeight: 500 }}>{name}</span>
-        {isLive ? (
-          <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <motion.span
-              animate={{ scale: [1, 1.5, 1], opacity: [1, 0.4, 1] }}
-              transition={{ duration: 1.8, repeat: Infinity }}
-              style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--success)" }}
-            />
-            <span style={{ fontSize: 9, color: "var(--success)", fontFamily: "monospace" }}>LIVE</span>
-          </span>
-        ) : (
-          <span style={{
-            fontSize: 8.5, color: "var(--warning)", fontFamily: "monospace",
-            padding: "1px 6px", borderRadius: 8,
-            background: "color-mix(in srgb, var(--warning) 10%, transparent)",
-          }}>SOON</span>
+      <TiltCard
+        style={{
+          position: "relative", padding: "15px", borderRadius: 12, overflow: "hidden",
+          background: "var(--bg-overlay)",
+          border: `1px solid color-mix(in srgb, ${color} ${isLive ? 25 : 12}%, var(--border-subtle))`,
+          opacity: isLive ? 1 : 0.7,
+        }}
+      >
+        {isLive && (
+          <motion.div
+            animate={{ opacity: [0.06, 0.14, 0.06] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+            style={{
+              position: "absolute", top: -20, right: -20, width: 70, height: 70,
+              borderRadius: "50%", background: color, filter: "blur(24px)", pointerEvents: "none",
+            }}
+          />
         )}
-      </div>
-      <div style={{ fontSize: 22, fontWeight: 700, color, marginBottom: 2, position: "relative" }}>{metric}</div>
-      <div style={{ fontSize: 10, color: "var(--text-muted)", position: "relative" }}>{metricLabel}</div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, position: "relative" }}>
+          <span style={{ fontSize: 11.5, color: "var(--text-secondary)", fontWeight: 500 }}>{name}</span>
+          {isLive ? (
+            <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <motion.span
+                animate={{ scale: [1, 1.5, 1], opacity: [1, 0.4, 1] }}
+                transition={{ duration: 1.8, repeat: Infinity }}
+                style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--success)" }}
+              />
+              <span style={{ fontSize: 9, color: "var(--success)", fontFamily: "monospace" }}>LIVE</span>
+            </span>
+          ) : (
+            <span style={{
+              fontSize: 8.5, color: "var(--warning)", fontFamily: "monospace",
+              padding: "1px 6px", borderRadius: 8,
+              background: "color-mix(in srgb, var(--warning) 10%, transparent)",
+            }}>SOON</span>
+          )}
+        </div>
+        <div style={{ fontSize: 22, fontWeight: 700, color, marginBottom: 2, position: "relative" }}>{metric}</div>
+        <div style={{ fontSize: 10, color: "var(--text-muted)", position: "relative" }}>{metricLabel}</div>
+      </TiltCard>
     </motion.div>
   );
 }
@@ -266,7 +250,8 @@ export default function DashboardPage() {
     : 87;
 
   return (
-    <div style={{ maxWidth: 1400, margin: "0 auto" }}>
+    <div style={{ maxWidth: 1400, margin: "0 auto", position: "relative" }}>
+      <MouseGlow />
 
       {/* ── HERO ── */}
       <motion.div
@@ -306,33 +291,14 @@ export default function DashboardPage() {
         <div style={{ display: "flex", alignItems: "center", gap: 24, position: "relative" }}>
           <AdherenceGauge value={avgAdherence} />
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <motion.a
-              href="/dashboard/patients"
-              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-              style={{
-                display: "flex", alignItems: "center", gap: 6,
-                padding: "9px 18px", borderRadius: 10, fontSize: 13, fontWeight: 500,
-                textDecoration: "none", border: "1px solid var(--border-default)",
-                background: "var(--bg-overlay)", color: "var(--text-secondary)",
-              }}
-            >
+            <MagneticButton variant="ghost" onClick={() => window.location.href = "/dashboard/patients"}>
               <i className="ti ti-users" style={{ fontSize: 15 }} />
               All Patients
-            </motion.a>
-            <motion.button
-              whileHover={{ scale: 1.03, boxShadow: "0 0 24px color-mix(in srgb, var(--accent-primary) 40%, transparent)" }}
-              whileTap={{ scale: 0.97 }}
-              onClick={() => setModalOpen(true)}
-              style={{
-                display: "flex", alignItems: "center", gap: 6,
-                padding: "9px 18px", borderRadius: 10, fontSize: 13, fontWeight: 500,
-                border: "none", cursor: "pointer",
-                background: "var(--accent-gradient)", color: "var(--text-inverse)",
-              }}
-            >
+            </MagneticButton>
+            <MagneticButton variant="primary" onClick={() => setModalOpen(true)}>
               <i className="ti ti-plus" style={{ fontSize: 15 }} />
               Add Patient
-            </motion.button>
+            </MagneticButton>
           </div>
         </div>
       </motion.div>
