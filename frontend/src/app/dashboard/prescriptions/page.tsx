@@ -1,28 +1,18 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { authService } from "@/lib/auth";
 import UploadPrescriptionModal from "@/components/patients/UploadPrescriptionModal";
+import {
+  EASE,
+  CountUp,
+  MouseGlow,
+  MagneticButton,
+  RotatingRingAvatar,
+  UnderlineSearch,
+} from "@/components/ui/PremiumUI";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-const EASE = [0.16, 1, 0.3, 1] as const;
-
-function CountUp({ to, duration = 900 }: { to: number; duration?: number }) {
-  const [val, setVal] = useState(0);
-  const started = useRef(false);
-  useEffect(() => {
-    if (started.current) return; started.current = true;
-    const start = Date.now();
-    const tick = () => {
-      const progress = Math.min((Date.now() - start) / duration, 1);
-      const ease = 1 - Math.pow(1 - progress, 3);
-      setVal(Math.round(ease * to));
-      if (progress < 1) requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-  }, [to]);
-  return <>{val}</>;
-}
 
 function ConfidenceBadge({ value }: { value: number }) {
   if (value === undefined || value === null) return null;
@@ -100,18 +90,11 @@ function PatientPickerModal({ isOpen, onClose, onPick }: { isOpen: boolean; onCl
                     whileHover={{ x: 3, background: "var(--bg-hover)" }}
                     style={{
                       width: "100%", display: "flex", alignItems: "center", gap: 10,
-                      padding: "10px 8px", borderRadius: 8, border: "none",
+                      padding: "8px", borderRadius: 8, border: "none",
                       background: "transparent", cursor: "pointer", textAlign: "left", marginBottom: 2,
                     }}
                   >
-                    <div style={{
-                      width: 30, height: 30, borderRadius: "50%",
-                      background: "color-mix(in srgb, var(--accent-primary) 15%, transparent)",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 11, fontWeight: 600, color: "var(--accent-primary)", flexShrink: 0,
-                    }}>
-                      {p.full_name.split(" ").map((w: string) => w[0]).slice(0, 2).join("")}
-                    </div>
+                    <RotatingRingAvatar name={p.full_name} size={30} />
                     <span style={{ fontSize: 13, color: "var(--text-primary)" }}>{p.full_name}</span>
                   </motion.button>
                 ))
@@ -161,69 +144,56 @@ export default function PrescriptionsPage() {
   const totalMeds = prescriptions.reduce((sum, p) => sum + (p.medications?.length || 0), 0);
 
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto" }}>
+    <div style={{ maxWidth: 860, margin: "0 auto", position: "relative" }}>
+      <MouseGlow />
+
+      {/* ── Header ── */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: EASE }}
-        style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+        style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24, flexWrap: "wrap", gap: 12, position: "relative", zIndex: 2 }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>Prescriptions</h1>
-          <p style={{ fontSize: 13, color: "var(--text-muted)", fontFamily: "monospace" }}>
+          <h1 style={{ fontSize: 26, fontWeight: 700, color: "var(--text-primary)", letterSpacing: "-0.02em", marginBottom: 6 }}>Prescriptions</h1>
+          <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
             {loading ? "Loading..." : `${prescriptions.length} prescriptions across all patients`}
           </p>
         </div>
-        <motion.button whileHover={{ scale: 1.03, boxShadow: "0 0 20px color-mix(in srgb, var(--accent-primary) 35%, transparent)" }}
-          whileTap={{ scale: 0.97 }}
-          onClick={() => setPickerOpen(true)}
-          style={{
-            display: "flex", alignItems: "center", gap: 6, padding: "9px 18px",
-            borderRadius: 10, fontSize: 13, fontWeight: 500, border: "none", cursor: "pointer",
-            background: "var(--accent-gradient)", color: "var(--text-inverse)",
-          }}>
+        <MagneticButton variant="primary" onClick={() => setPickerOpen(true)}>
           <i className="ti ti-upload" style={{ fontSize: 15 }} />
           Upload Prescription
-        </motion.button>
+        </MagneticButton>
       </motion.div>
 
-      {/* Hero stats */}
+      {/* ── Inline stats ── */}
       {!loading && prescriptions.length > 0 && (
         <motion.div
           initial="hidden" animate="show"
           variants={{ hidden: {}, show: { transition: { staggerChildren: 0.06 } } }}
           style={{
-            display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-            gap: 0, marginBottom: 28, background: "var(--bg-surface)",
-            border: "1px solid var(--border-subtle)", borderRadius: 14, overflow: "hidden",
+            display: "flex", gap: 32, marginBottom: 28, paddingBottom: 24,
+            borderBottom: "1px solid var(--border-subtle)", flexWrap: "wrap", position: "relative", zIndex: 2,
           }}>
           {[
-            { label: "Total", value: prescriptions.length, color: "var(--text-primary)" },
-            { label: "Medicines", value: totalMeds, color: "var(--accent-primary)" },
-            { label: "Doctors", value: uniqueDoctors, color: "var(--success)" },
-            { label: "Flagged", value: flaggedCount, color: flaggedCount > 0 ? "var(--warning)" : "var(--text-muted)" },
+            { label: "total", value: prescriptions.length, color: "var(--text-primary)" },
+            { label: "medicines", value: totalMeds, color: "var(--accent-primary)" },
+            { label: "doctors", value: uniqueDoctors, color: "var(--success)" },
+            { label: "flagged", value: flaggedCount, color: flaggedCount > 0 ? "var(--warning)" : "var(--text-muted)" },
           ].map((s, i) => (
             <motion.div key={i}
-              variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: EASE } } }}
-              whileHover={{ background: "var(--bg-hover)" }}
-              style={{ padding: "16px 20px", borderLeft: i === 0 ? "none" : "1px solid var(--border-subtle)", transition: "background 0.2s" }}>
-              <div style={{ fontSize: 10, color: "var(--text-muted)", fontFamily: "monospace", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>
-                {s.label}
-              </div>
-              <div style={{ fontSize: 24, fontWeight: 700, color: s.color, letterSpacing: "-0.02em" }}>
+              variants={{ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: EASE } } }}
+            >
+              <div style={{ fontSize: 22, fontWeight: 700, color: s.color, letterSpacing: "-0.02em" }}>
                 <CountUp to={s.value} />
               </div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{s.label}</div>
             </motion.div>
           ))}
         </motion.div>
       )}
 
+      {/* ── Search ── */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15, duration: 0.4 }}
-        style={{
-          display: "flex", alignItems: "center", gap: 10, padding: "10px 16px",
-          borderRadius: 10, marginBottom: 32, background: "var(--bg-surface)", border: "1px solid var(--border-subtle)",
-        }}>
-        <i className="ti ti-search" style={{ fontSize: 15, color: "var(--text-muted)" }} />
-        <input value={search} onChange={e => setSearch(e.target.value)}
-          placeholder="Search by patient or doctor..."
-          style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 13, color: "var(--text-primary)", fontFamily: "inherit" }} />
+        style={{ marginBottom: 32, position: "relative", zIndex: 2 }}>
+        <UnderlineSearch value={search} onChange={setSearch} placeholder="Search by patient or doctor..." />
       </motion.div>
 
       {loading ? (
@@ -233,8 +203,8 @@ export default function PrescriptionsPage() {
         </div>
       ) : filtered.length === 0 ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-          style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)", borderRadius: 14, padding: 60, textAlign: "center" }}>
-          <i className="ti ti-file-text" style={{ fontSize: 44, color: "var(--text-muted)", display: "block", marginBottom: 12 }} />
+          style={{ padding: "60px 0", textAlign: "center" }}>
+          <i className="ti ti-file-text" style={{ fontSize: 40, color: "var(--text-muted)", display: "block", marginBottom: 12, opacity: 0.5 }} />
           <p style={{ fontSize: 14, fontWeight: 500, color: "var(--text-secondary)", marginBottom: 4 }}>
             {search ? "No prescriptions match your search" : "No prescriptions uploaded yet"}
           </p>
@@ -242,14 +212,13 @@ export default function PrescriptionsPage() {
         </motion.div>
       ) : (
         // ── TIMELINE ──
-        <div style={{ position: "relative", paddingLeft: 32 }}>
-          {/* Animated connecting line */}
+        <div style={{ position: "relative", paddingLeft: 28, zIndex: 2 }}>
           <motion.div
             initial={{ height: 0 }} animate={{ height: "100%" }}
             transition={{ duration: filtered.length * 0.15 + 0.4, ease: EASE }}
             style={{
-              position: "absolute", left: 9, top: 6, width: 1.5,
-              background: "linear-gradient(to bottom, var(--accent-primary), color-mix(in srgb, var(--accent-primary) 20%, transparent))",
+              position: "absolute", left: 7, top: 6, width: 1.5,
+              background: "linear-gradient(to bottom, var(--accent-primary), color-mix(in srgb, var(--accent-primary) 15%, transparent))",
             }}
           />
 
@@ -264,62 +233,51 @@ export default function PrescriptionsPage() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, scale: 0.96 }}
                   transition={{ duration: 0.4, delay: i * 0.06, ease: EASE }}
-                  style={{ position: "relative", marginBottom: 20 }}
+                  style={{ position: "relative", paddingBottom: 22, borderBottom: i < filtered.length - 1 ? "1px solid var(--border-subtle)" : "none", marginBottom: 22 }}
                 >
-                  {/* Timeline dot */}
                   <motion.div
-                    animate={rx.safety_flag ? { boxShadow: [`0 0 0px ${dotColor}`, `0 0 10px ${dotColor}`, `0 0 0px ${dotColor}`] } : {}}
+                    animate={rx.safety_flag ? { boxShadow: [`0 0 0px ${dotColor}`, `0 0 8px ${dotColor}`, `0 0 0px ${dotColor}`] } : {}}
                     transition={{ duration: 2, repeat: Infinity }}
                     style={{
-                      position: "absolute", left: -32, top: 6,
-                      width: 12, height: 12, borderRadius: "50%",
+                      position: "absolute", left: -28, top: 4,
+                      width: 10, height: 10, borderRadius: "50%",
                       background: dotColor,
                       border: "2px solid var(--bg-page)",
                     }}
                   />
 
-                  <motion.div
-                    whileHover={{ y: -2, borderColor: "var(--accent-primary)" }}
-                    transition={{ duration: 0.2 }}
-                    style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)", borderRadius: 14, padding: 20 }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
-                      <div>
-                        <a href={`/dashboard/patients/${rx.patient_id}`} style={{
-                          fontSize: 14, fontWeight: 600, color: "var(--accent-primary)", textDecoration: "none",
-                        }}>
-                          {rx.patient_name}
-                        </a>
-                        <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
-                          {rx.doctor_name || "Unknown Doctor"} ·{" "}
-                          <span style={{ fontFamily: "monospace" }}>
-                            {rx.created_at ? new Date(rx.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : ""}
-                          </span>
-                        </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
+                    <div>
+                      <a href={`/dashboard/patients/${rx.patient_id}`} style={{
+                        fontSize: 14.5, fontWeight: 600, color: "var(--text-primary)", textDecoration: "none",
+                      }}>
+                        {rx.patient_name}
+                      </a>
+                      <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
+                        {rx.doctor_name || "Unknown Doctor"} ·{" "}
+                        {rx.created_at ? new Date(rx.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : ""}
                       </div>
-                      {rx.safety_flag && (
-                        <span style={{
-                          fontSize: 10, padding: "3px 8px", borderRadius: 20, height: "fit-content",
-                          background: "color-mix(in srgb, var(--warning) 12%, transparent)",
-                          color: "var(--warning)", fontFamily: "monospace",
-                        }}>
-                          ⚠ {rx.safety_note || "Flagged"}
-                        </span>
-                      )}
                     </div>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                      {(rx.medications || []).map((m: any, j: number) => (
-                        <span key={j} style={{
-                          fontSize: 12, padding: "5px 10px", borderRadius: 8,
-                          background: "var(--bg-overlay)", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)",
-                          display: "inline-flex", alignItems: "center",
-                        }}>
-                          {m.medicine_name} <span style={{ color: "var(--text-muted)", marginLeft: 4 }}>{m.dosage}</span>
-                          <ConfidenceBadge value={m.confidence} />
-                        </span>
-                      ))}
-                    </div>
-                  </motion.div>
+                    {rx.safety_flag && (
+                      <span style={{
+                        fontSize: 10.5, color: "var(--warning)", height: "fit-content",
+                      }}>
+                        ⚠ {rx.safety_note || "Flagged"}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {(rx.medications || []).map((m: any, j: number) => (
+                      <span key={j} style={{
+                        fontSize: 12, padding: "5px 10px", borderRadius: 8,
+                        background: "var(--bg-overlay)", border: "1px solid var(--border-subtle)", color: "var(--text-secondary)",
+                        display: "inline-flex", alignItems: "center",
+                      }}>
+                        {m.medicine_name} <span style={{ color: "var(--text-muted)", marginLeft: 4 }}>{m.dosage}</span>
+                        <ConfidenceBadge value={m.confidence} />
+                      </span>
+                    ))}
+                  </div>
                 </motion.div>
               );
             })}
