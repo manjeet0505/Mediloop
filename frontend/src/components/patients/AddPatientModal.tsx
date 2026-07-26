@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { authService } from "@/lib/auth";
+import { MagneticButton } from "@/components/ui/PremiumUI";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -22,12 +23,12 @@ function FormField({
   label: string; value: string; onChange: (v: string) => void;
   placeholder?: string; required?: boolean; type?: string;
 }) {
+  const [focused, setFocused] = useState(false);
   return (
-    <div style={{ marginBottom: 14 }}>
+    <div style={{ marginBottom: 16 }}>
       <label style={{
         display: "block", fontSize: 11, color: "var(--text-muted)",
-        marginBottom: 6, fontFamily: "monospace", textTransform: "uppercase",
-        letterSpacing: "0.05em",
+        marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em",
       }}>
         {label}{required && <span style={{ color: "var(--danger)" }}> *</span>}
       </label>
@@ -35,15 +36,15 @@ function FormField({
         type={type}
         value={value}
         onChange={e => onChange(e.target.value)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         placeholder={placeholder}
         style={{
-          width: "100%", padding: "10px 12px", borderRadius: 8,
-          background: "var(--bg-overlay)", border: "1px solid var(--border-subtle)",
-          color: "var(--text-primary)", fontSize: 13, outline: "none",
+          width: "100%", padding: "8px 2px", background: "transparent",
+          border: "none", borderBottom: `1.5px solid ${focused ? "var(--accent-primary)" : "var(--border-subtle)"}`,
+          color: "var(--text-primary)", fontSize: 14, outline: "none",
           fontFamily: "inherit", transition: "border-color 0.15s",
         }}
-        onFocus={e => (e.target.style.borderColor = "var(--accent-primary)")}
-        onBlur={e => (e.target.style.borderColor = "var(--border-subtle)")}
       />
     </div>
   );
@@ -125,16 +126,7 @@ function InviteCodeReveal({ code, patientName, patientPhone }: { code: string; p
       </div>
 
       <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-        <motion.button
-          whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-          onClick={handleCopy}
-          style={{
-            display: "flex", alignItems: "center", gap: 6,
-            padding: "9px 16px", borderRadius: 9, fontSize: 12.5, fontWeight: 500,
-            border: "1px solid var(--border-default)", background: "var(--bg-overlay)",
-            color: "var(--text-secondary)", cursor: "pointer", fontFamily: "inherit",
-          }}
-        >
+        <MagneticButton variant="ghost" onClick={handleCopy} style={{ padding: "9px 16px", fontSize: 12.5 }}>
           <AnimatePresence mode="wait">
             {copied ? (
               <motion.span key="done" initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -148,7 +140,7 @@ function InviteCodeReveal({ code, patientName, patientPhone }: { code: string; p
               </motion.span>
             )}
           </AnimatePresence>
-        </motion.button>
+        </MagneticButton>
 
         <motion.a
           href={waLink} target="_blank" rel="noopener noreferrer"
@@ -277,13 +269,12 @@ export default function AddPatientModal({ isOpen, onClose, onSuccess }: AddPatie
                 <FormField label="Family Phone (optional)" value={familyPhone} onChange={setFamilyPhone} placeholder="+91XXXXXXXXXX" />
                 <FormField label="Doctor Phone (optional)" value={doctorPhone} onChange={setDoctorPhone} placeholder="+91XXXXXXXXXX" />
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                   <FormField label="Age" value={age} onChange={setAge} placeholder="45" type="number" />
-                  <div style={{ marginBottom: 14 }}>
+                  <div style={{ marginBottom: 16 }}>
                     <label style={{
                       display: "block", fontSize: 11, color: "var(--text-muted)",
-                      marginBottom: 6, fontFamily: "monospace", textTransform: "uppercase",
-                      letterSpacing: "0.05em",
+                      marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em",
                     }}>
                       Language
                     </label>
@@ -291,9 +282,9 @@ export default function AddPatientModal({ isOpen, onClose, onSuccess }: AddPatie
                       value={language}
                       onChange={e => setLanguage(e.target.value)}
                       style={{
-                        width: "100%", padding: "10px 12px", borderRadius: 8,
-                        background: "var(--bg-overlay)", border: "1px solid var(--border-subtle)",
-                        color: "var(--text-primary)", fontSize: 13, outline: "none",
+                        width: "100%", padding: "8px 2px", background: "transparent",
+                        border: "none", borderBottom: "1.5px solid var(--border-subtle)",
+                        color: "var(--text-primary)", fontSize: 14, outline: "none",
                         fontFamily: "inherit", cursor: "pointer",
                       }}
                     >
@@ -309,9 +300,7 @@ export default function AddPatientModal({ isOpen, onClose, onSuccess }: AddPatie
                     initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
                     style={{
                       display: "flex", alignItems: "center", gap: 8,
-                      padding: "10px 12px", borderRadius: 8, marginBottom: 14,
-                      background: "color-mix(in srgb, var(--danger) 10%, transparent)",
-                      border: "1px solid color-mix(in srgb, var(--danger) 25%, transparent)",
+                      padding: "8px 0", marginBottom: 14,
                     }}
                   >
                     <i className="ti ti-alert-circle" style={{ fontSize: 14, color: "var(--danger)" }} />
@@ -319,41 +308,33 @@ export default function AddPatientModal({ isOpen, onClose, onSuccess }: AddPatie
                   </motion.div>
                 )}
 
-                <motion.button
-                  whileHover={{ scale: submitting ? 1 : 1.01 }}
-                  whileTap={{ scale: submitting ? 1 : 0.98 }}
-                  onClick={handleSubmit}
-                  disabled={submitting}
-                  style={{
-                    width: "100%", padding: "12px", borderRadius: 10,
-                    fontSize: 13.5, fontWeight: 600, border: "none",
-                    background: submitting ? "var(--bg-overlay)" : "var(--accent-gradient)",
-                    color: submitting ? "var(--text-muted)" : "var(--text-inverse)",
-                    cursor: submitting ? "default" : "pointer",
-                    marginTop: 6, display: "flex", alignItems: "center",
-                    justifyContent: "center", gap: 8,
-                  }}
-                >
-                  {submitting ? (
-                    <>
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
-                        style={{
-                          width: 14, height: 14, borderRadius: "50%",
-                          border: "2px solid var(--border-subtle)",
-                          borderTop: "2px solid var(--text-secondary)",
-                        }}
-                      />
-                      Creating...
-                    </>
-                  ) : (
-                    <>
-                      <i className="ti ti-plus" style={{ fontSize: 15 }} />
-                      Create Patient
-                    </>
-                  )}
-                </motion.button>
+                <div style={{ marginTop: 10 }}>
+                  <MagneticButton
+                    variant="primary"
+                    onClick={submitting ? () => {} : handleSubmit}
+                    style={{ width: "100%", justifyContent: "center", padding: "12px", opacity: submitting ? 0.6 : 1 }}
+                  >
+                    {submitting ? (
+                      <>
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+                          style={{
+                            width: 14, height: 14, borderRadius: "50%",
+                            border: "2px solid var(--border-subtle)",
+                            borderTop: "2px solid var(--text-inverse)",
+                          }}
+                        />
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <i className="ti ti-plus" style={{ fontSize: 15 }} />
+                        Create Patient
+                      </>
+                    )}
+                  </MagneticButton>
+                </div>
               </>
             ) : (
               createdPatient && (
@@ -363,20 +344,11 @@ export default function AddPatientModal({ isOpen, onClose, onSuccess }: AddPatie
                     patientName={createdPatient.full_name}
                     patientPhone={createdPatient.phone}
                   />
-                  <motion.button
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}
-                    whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
-                    onClick={handleClose}
-                    style={{
-                      width: "100%", padding: "11px", borderRadius: 10, marginTop: 22,
-                      fontSize: 13, fontWeight: 500,
-                      border: "1px solid var(--border-default)",
-                      background: "transparent", color: "var(--text-secondary)",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Done
-                  </motion.button>
+                  <div style={{ marginTop: 22 }}>
+                    <MagneticButton variant="ghost" onClick={handleClose} style={{ width: "100%", justifyContent: "center", padding: "11px" }}>
+                      Done
+                    </MagneticButton>
+                  </div>
                 </>
               )
             )}
