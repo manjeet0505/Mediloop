@@ -73,7 +73,7 @@ function CountUp({ to, duration = 1200 }: { to: number; duration?: number }) {
 }
 
 function Divider() {
-  return <div style={{ height: 1, background: "#141414", margin: "32px 0" }} />;
+  return <div style={{ height: 1, background: "var(--border-subtle)", margin: "32px 0" }} />;
 }
 
 function Row({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
@@ -81,7 +81,7 @@ function Row({ children, style }: { children: React.ReactNode; style?: React.CSS
     <div style={{
       display: "flex", alignItems: "center",
       padding: "16px 0",
-      borderBottom: "1px solid #0f0f0f",
+      borderBottom: "1px solid var(--border-subtle)",
       gap: 16,
       ...style,
     }}>
@@ -182,9 +182,9 @@ export default function PatientDashboard() {
           justifyContent: "space-between", marginBottom: 48,
         }}>
           <div>
-            <p style={{ fontSize: 13, color: "#444", marginBottom: 10 }}>{greet}</p>
+            <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 10 }}>{greet}</p>
             <h1 style={{
-              fontSize: 42, fontWeight: 700, color: "#fff",
+              fontSize: 42, fontWeight: 700, color: "var(--text-primary)",
               letterSpacing: "-0.04em", lineHeight: 1,
             }}>
               {name || "Patient"}
@@ -192,12 +192,12 @@ export default function PatientDashboard() {
           </div>
           <div style={{ textAlign: "right" }}>
             <div style={{
-              fontSize: 36, fontWeight: 300, color: "#fff",
+              fontSize: 36, fontWeight: 300, color: "var(--text-primary)",
               letterSpacing: "-0.04em", lineHeight: 1,
             }}>
               <LiveClock />
             </div>
-            <div style={{ fontSize: 12, color: "#444", marginTop: 6 }}>
+            <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6 }}>
               {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}
             </div>
           </div>
@@ -209,38 +209,39 @@ export default function PatientDashboard() {
             transition={{ delay: 0.1 }}
             style={{
               display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "20px 0", borderTop: "1px solid #1a1a1a",
-              borderBottom: "1px solid #1a1a1a",
+              padding: "20px 0", borderTop: "1px solid var(--border-default)",
+              borderBottom: "1px solid var(--border-default)",
             }}>
             <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
               <span style={{
                 fontSize: 10, padding: "3px 10px", borderRadius: 20,
-                background: "#1a1200", color: "#f59e0b",
-                border: "1px solid #2a1f00", fontWeight: 700, letterSpacing: "0.06em",
+                background: "var(--warning-bg)", color: "var(--warning)",
+                border: "1px solid color-mix(in srgb, var(--warning) 30%, transparent)",
+                fontWeight: 700, letterSpacing: "0.06em",
               }}>DUE NOW</span>
               <div>
-                <span style={{ fontSize: 18, fontWeight: 600, color: "#fff", letterSpacing: "-0.02em" }}>
+                <span style={{ fontSize: 18, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
                   {nextDose.name}
                 </span>
-                <span style={{ fontSize: 15, color: "#444", marginLeft: 8 }}>{nextDose.dosage}</span>
+                <span style={{ fontSize: 15, color: "var(--text-muted)", marginLeft: 8 }}>{nextDose.dosage}</span>
               </div>
-              <span style={{ fontSize: 13, color: "#444" }}>{nextDose.time}</span>
+              <span style={{ fontSize: 13, color: "var(--text-muted)" }}>{nextDose.time}</span>
               <motion.span
                 animate={countdown.overdue ? { opacity: [1, 0.5, 1] } : {}}
                 transition={{ duration: 1.2, repeat: Infinity }}
-                style={{ fontSize: 11.5, color: countdown.overdue ? "#ef4444" : "#666" }}
+                style={{ fontSize: 11.5, color: countdown.overdue ? "var(--danger)" : "var(--text-secondary)" }}
               >
                 {countdown.text}
               </motion.span>
             </div>
             <motion.button
-              whileHover={{ background: "#fff", color: "#000" }}
+              whileHover={{ background: "var(--text-primary)", color: "var(--bg-page)" }}
               whileTap={{ scale: 0.97 }}
               onClick={() => { const i = meds.findIndex(m => !m.taken); if (i !== -1) markTaken(i); }}
               style={{
                 padding: "9px 20px", borderRadius: 8, fontSize: 13,
-                fontWeight: 500, border: "1px solid #2a2a2a",
-                background: "transparent", color: "#888", cursor: "pointer",
+                fontWeight: 500, border: "1px solid var(--border-default)",
+                background: "transparent", color: "var(--text-secondary)", cursor: "pointer",
                 transition: "all 0.15s", fontFamily: "inherit",
               }}>
               Mark taken →
@@ -253,20 +254,20 @@ export default function PatientDashboard() {
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.12 }}
         style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 0, marginBottom: 56 }}>
         {[
-          { label: "Doses today", value: total > 0 ? `${taken}/${total}` : "0/3", color: "#fff" },
-          { label: "Streak", value: streak, suffix: " days", color: "#fff" },
-          { label: "Adherence", value: adherence, suffix: "%", color: "#fff" },
-          { label: "Stock alert", value: lowStock[0]?.days_left ?? "—", suffix: lowStock.length > 0 ? " days" : "", color: lowStock.length > 0 ? "#ef4444" : "#fff" },
+          { label: "Doses today", value: total > 0 ? `${taken}/${total}` : "0/3", color: "var(--text-primary)" },
+          { label: "Streak", value: streak, suffix: " days", color: "var(--text-primary)" },
+          { label: "Adherence", value: adherence, suffix: "%", color: "var(--text-primary)" },
+          { label: "Stock alert", value: lowStock[0]?.days_left ?? "—", suffix: lowStock.length > 0 ? " days" : "", color: lowStock.length > 0 ? "var(--danger)" : "var(--text-primary)" },
         ].map((s, i) => (
           <div key={i} style={{
             padding: "0 0 0 32px",
-            borderLeft: i === 0 ? "none" : "1px solid #141414",
+            borderLeft: i === 0 ? "none" : "1px solid var(--border-subtle)",
             paddingLeft: i === 0 ? 0 : 32,
           }}>
-            <div style={{ fontSize: 11, color: "#444", marginBottom: 10, letterSpacing: "0.02em" }}>{s.label}</div>
+            <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 10, letterSpacing: "0.02em" }}>{s.label}</div>
             <div style={{ fontSize: 36, fontWeight: 700, color: s.color, letterSpacing: "-0.04em", lineHeight: 1 }}>
               {typeof s.value === "number" ? <CountUp to={s.value} /> : s.value}
-              {s.suffix && <span style={{ fontSize: 18, fontWeight: 400, color: i === 3 && lowStock.length > 0 ? "#ef4444" : "#333" }}>{s.suffix}</span>}
+              {s.suffix && <span style={{ fontSize: 18, fontWeight: 400, color: i === 3 && lowStock.length > 0 ? "var(--danger)" : "var(--text-muted)" }}>{s.suffix}</span>}
             </div>
           </div>
         ))}
@@ -281,15 +282,15 @@ export default function PatientDashboard() {
           {/* Medicines section */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <h2 style={{ fontSize: 13, color: "#666", fontWeight: 400, letterSpacing: "0.02em" }}>
+              <h2 style={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 400, letterSpacing: "0.02em" }}>
                 TODAY'S MEDICINES
               </h2>
-              <span style={{ fontSize: 12, color: "#333" }}>{taken} of {total || 3} taken</span>
+              <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{taken} of {total || 3} taken</span>
             </div>
 
             {meds.length === 0 ? (
               [1, 2, 3].map(i => (
-                <div key={i} style={{ height: 56, background: "#0a0a0a", borderRadius: 8, marginBottom: 8, animation: "pulse 1.5s infinite" }} />
+                <div key={i} style={{ height: 56, background: "var(--bg-overlay)", borderRadius: 8, marginBottom: 8, animation: "pulse 1.5s infinite" }} />
               ))
             ) : meds.map((med, i) => (
               <motion.div key={med.id ?? i} layout
@@ -298,14 +299,14 @@ export default function PatientDashboard() {
                 style={{
                   display: "flex", alignItems: "center", gap: 16,
                   padding: "14px 0",
-                  borderBottom: "1px solid #0f0f0f",
+                  borderBottom: "1px solid var(--border-subtle)",
                   opacity: med.taken ? 0.4 : 1,
                   transition: "opacity 0.3s",
                 }}>
                 <div style={{ position: "relative", flexShrink: 0 }}>
                   <div style={{
                     width: 6, height: 6, borderRadius: "50%",
-                    background: med.taken ? "#2a2a2a" : med.color,
+                    background: med.taken ? "var(--border-default)" : med.color,
                     boxShadow: med.taken ? "none" : `0 0 8px ${med.color}`,
                   }} />
                   <AnimatePresence>
@@ -317,7 +318,7 @@ export default function PatientDashboard() {
                         style={{
                           position: "absolute", top: "50%", left: "50%",
                           width: 6, height: 6, borderRadius: "50%",
-                          background: "#10b981",
+                          background: "var(--success)",
                           transform: "translate(-50%, -50%)",
                           pointerEvents: "none",
                         }}
@@ -326,16 +327,16 @@ export default function PatientDashboard() {
                   </AnimatePresence>
                 </div>
                 <div style={{ flex: 1 }}>
-                  <span style={{ fontSize: 14, fontWeight: 500, color: med.taken ? "#444" : "#e8e8e8" }}>
+                  <span style={{ fontSize: 14, fontWeight: 500, color: med.taken ? "var(--text-muted)" : "var(--text-primary)" }}>
                     {med.name}
                   </span>
-                  <span style={{ fontSize: 13, color: "#444", marginLeft: 8 }}>{med.dosage}</span>
+                  <span style={{ fontSize: 13, color: "var(--text-muted)", marginLeft: 8 }}>{med.dosage}</span>
                 </div>
-                <span style={{ fontSize: 12, color: "#333" }}>{med.time}</span>
+                <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{med.time}</span>
                 <AnimatePresence mode="wait">
                   {med.taken ? (
                     <motion.span key="done" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                      style={{ fontSize: 12, color: "#2a5a3a", fontWeight: 500, minWidth: 80, textAlign: "right" }}>
+                      style={{ fontSize: 12, color: "var(--success)", fontWeight: 500, minWidth: 80, textAlign: "right" }}>
                       Taken
                     </motion.span>
                   ) : confirming === i ? (
@@ -343,23 +344,23 @@ export default function PatientDashboard() {
                       {[0, 1, 2].map(d => (
                         <motion.div key={d} animate={{ opacity: [0.3, 1, 0.3] }}
                           transition={{ duration: 0.8, repeat: Infinity, delay: d * 0.15 }}
-                          style={{ width: 4, height: 4, borderRadius: "50%", background: "#444" }} />
+                          style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--text-muted)" }} />
                       ))}
                     </motion.div>
                   ) : errorAt === i ? (
                     <motion.span key="err" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                      style={{ fontSize: 11.5, color: "#ef4444", minWidth: 80, textAlign: "right" }}>
+                      style={{ fontSize: 11.5, color: "var(--danger)", minWidth: 80, textAlign: "right" }}>
                       Failed, retry
                     </motion.span>
                   ) : (
                     <motion.button key="btn"
-                      whileHover={{ color: "#fff", borderColor: "#444" }}
+                      whileHover={{ color: "var(--text-primary)", borderColor: "var(--border-strong)" }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => markTaken(i)}
                       style={{
                         padding: "5px 14px", borderRadius: 6, fontSize: 12,
-                        border: "1px solid #222", background: "transparent",
-                        color: "#555", cursor: "pointer", fontFamily: "inherit",
+                        border: "1px solid var(--border-default)", background: "transparent",
+                        color: "var(--text-secondary)", cursor: "pointer", fontFamily: "inherit",
                         transition: "all 0.15s", minWidth: 80,
                       }}>
                       Take
@@ -374,22 +375,22 @@ export default function PatientDashboard() {
 
           {/* Week chart */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.22 }}>
-            <h2 style={{ fontSize: 13, color: "#666", fontWeight: 400, letterSpacing: "0.02em", marginBottom: 24 }}>
+            <h2 style={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 400, letterSpacing: "0.02em", marginBottom: 24 }}>
               THIS WEEK
             </h2>
             <div style={{ display: "flex", gap: 8, alignItems: "flex-end", height: 64 }}>
               {weekData.map((day: any, i: number) => {
                 const isToday = i === 6;
-                const color = day.p === 100 ? "#10b981" : day.p >= 66 ? "#f59e0b" : "#ef4444";
+                const color = day.p === 100 ? "var(--success)" : day.p >= 66 ? "var(--warning)" : "var(--danger)";
                 return (
                   <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-                    <div style={{ width: "100%", maxWidth: 32, height: 48, background: "#0a0a0a", borderRadius: 4, position: "relative", overflow: "hidden" }}>
+                    <div style={{ width: "100%", maxWidth: 32, height: 48, background: "var(--bg-overlay)", borderRadius: 4, position: "relative", overflow: "hidden" }}>
                       <motion.div initial={{ height: 0 }} animate={{ height: `${day.p}%` }}
                         transition={{ delay: 0.3 + i * 0.05, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                         style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: color, opacity: isToday ? 1 : 0.4 }}
                       />
                     </div>
-                    <span style={{ fontSize: 10, color: isToday ? "#fff" : "#333", fontWeight: isToday ? 600 : 400 }}>
+                    <span style={{ fontSize: 10, color: isToday ? "var(--text-primary)" : "var(--text-muted)", fontWeight: isToday ? 600 : 400 }}>
                       {day.d}
                     </span>
                   </div>
@@ -402,17 +403,17 @@ export default function PatientDashboard() {
 
           {/* Activity */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.26 }}>
-            <h2 style={{ fontSize: 13, color: "#666", fontWeight: 400, letterSpacing: "0.02em", marginBottom: 20 }}>
+            <h2 style={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 400, letterSpacing: "0.02em", marginBottom: 20 }}>
               RECENT ACTIVITY
             </h2>
             {ACTIVITY.map((item, i) => (
               <Row key={i}>
                 <div style={{
                   width: 6, height: 6, borderRadius: "50%", flexShrink: 0,
-                  background: item.type === "taken" ? "#10b981" : item.type === "missed" ? "#ef4444" : item.type === "alert" ? "#f59e0b" : "#6366f1",
+                  background: item.type === "taken" ? "var(--success)" : item.type === "missed" ? "var(--danger)" : item.type === "alert" ? "var(--warning)" : "var(--accent-primary)",
                 }} />
-                <span style={{ fontSize: 13, color: "#888", flex: 1 }}>{item.msg}</span>
-                <span style={{ fontSize: 11, color: "#333" }}>{item.ago}</span>
+                <span style={{ fontSize: 13, color: "var(--text-secondary)", flex: 1 }}>{item.msg}</span>
+                <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{item.ago}</span>
               </Row>
             ))}
           </motion.div>
@@ -424,15 +425,15 @@ export default function PatientDashboard() {
           {/* Adherence */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.18 }}
             style={{ marginBottom: 40 }}>
-            <h2 style={{ fontSize: 13, color: "#666", fontWeight: 400, letterSpacing: "0.02em", marginBottom: 20 }}>
+            <h2 style={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 400, letterSpacing: "0.02em", marginBottom: 20 }}>
               ADHERENCE
             </h2>
             <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 8 }}>
               <svg width="72" height="72" viewBox="0 0 72 72" style={{ flexShrink: 0 }}>
-                <circle cx="36" cy="36" r="30" fill="none" stroke="#141414" strokeWidth="5" />
+                <circle cx="36" cy="36" r="30" fill="none" stroke="var(--border-subtle)" strokeWidth="5" />
                 <motion.circle
                   cx="36" cy="36" r="30" fill="none"
-                  stroke={adherence >= 80 ? "#10b981" : "#f59e0b"}
+                  stroke={adherence >= 80 ? "var(--success)" : "var(--warning)"}
                   strokeWidth="5" strokeLinecap="round"
                   strokeDasharray={2 * Math.PI * 30}
                   initial={{ strokeDashoffset: 2 * Math.PI * 30 }}
@@ -441,18 +442,18 @@ export default function PatientDashboard() {
                   transform="rotate(-90 36 36)"
                 />
               </svg>
-              <div style={{ fontSize: 44, fontWeight: 700, color: "#fff", letterSpacing: "-0.05em", lineHeight: 1 }}>
-                <CountUp to={adherence} /><span style={{ fontSize: 22, color: "#333", fontWeight: 400 }}>%</span>
+              <div style={{ fontSize: 44, fontWeight: 700, color: "var(--text-primary)", letterSpacing: "-0.05em", lineHeight: 1 }}>
+                <CountUp to={adherence} /><span style={{ fontSize: 22, color: "var(--text-muted)", fontWeight: 400 }}>%</span>
               </div>
             </div>
-            <div style={{ fontSize: 12, color: "#444", marginBottom: 20 }}>
+            <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 20 }}>
               {adherenceData?.taken_total ?? 52} taken · {adherenceData?.missed_total ?? 8} missed
             </div>
             {/* Thin progress bar */}
-            <div style={{ height: 2, background: "#141414", borderRadius: 1, overflow: "hidden" }}>
+            <div style={{ height: 2, background: "var(--border-subtle)", borderRadius: 1, overflow: "hidden" }}>
               <motion.div initial={{ width: 0 }} animate={{ width: `${adherence}%` }}
                 transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
-                style={{ height: "100%", background: adherence >= 80 ? "#10b981" : "#f59e0b", borderRadius: 1 }}
+                style={{ height: "100%", background: adherence >= 80 ? "var(--success)" : "var(--warning)", borderRadius: 1 }}
               />
             </div>
           </motion.div>
@@ -460,24 +461,24 @@ export default function PatientDashboard() {
           {/* Vitals */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.21 }}
             style={{ marginBottom: 40 }}>
-            <h2 style={{ fontSize: 13, color: "#666", fontWeight: 400, letterSpacing: "0.02em", marginBottom: 20 }}>
+            <h2 style={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 400, letterSpacing: "0.02em", marginBottom: 20 }}>
               VITALS
             </h2>
             {VITALS.map((v, i) => (
               <div key={i} style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "12px 0", borderBottom: "1px solid #0f0f0f",
+                padding: "12px 0", borderBottom: "1px solid var(--border-subtle)",
               }}>
-                <span style={{ fontSize: 12, color: "#444" }}>{v.label}</span>
+                <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{v.label}</span>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ fontSize: 13, fontWeight: 500, color: "#e8e8e8" }}>
-                    {v.value} <span style={{ fontSize: 11, color: "#333", fontWeight: 400 }}>{v.unit}</span>
+                  <span style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)" }}>
+                    {v.value} <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 400 }}>{v.unit}</span>
                   </span>
                   <span style={{
                     fontSize: 10, padding: "2px 8px", borderRadius: 4,
-                    background: v.ok ? "#0a1a0f" : "#1a0f00",
-                    color: v.ok ? "#10b981" : "#f59e0b",
-                    border: `1px solid ${v.ok ? "#0f2a18" : "#2a1800"}`,
+                    background: v.ok ? "var(--success-bg)" : "var(--warning-bg)",
+                    color: v.ok ? "var(--success)" : "var(--warning)",
+                    border: `1px solid color-mix(in srgb, ${v.ok ? "var(--success)" : "var(--warning)"} 25%, transparent)`,
                   }}>{v.ok ? "Normal" : "Watch"}</span>
                 </div>
               </div>
@@ -488,26 +489,26 @@ export default function PatientDashboard() {
           {lowStock.length > 0 && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.24 }}
               style={{ marginBottom: 40 }}>
-              <h2 style={{ fontSize: 13, color: "#666", fontWeight: 400, letterSpacing: "0.02em", marginBottom: 20 }}>
+              <h2 style={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 400, letterSpacing: "0.02em", marginBottom: 20 }}>
                 STOCK ALERT
               </h2>
               {lowStock.map((s: any, i: number) => (
                 <div key={i} style={{ marginBottom: 16 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-                    <span style={{ fontSize: 13, color: "#888" }}>{s.name}</span>
-                    <span style={{ fontSize: 13, color: "#ef4444" }}>{s.days_left} days left</span>
+                    <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>{s.name}</span>
+                    <span style={{ fontSize: 13, color: "var(--danger)" }}>{s.days_left} days left</span>
                   </div>
-                  <div style={{ height: 2, background: "#141414", borderRadius: 1, overflow: "hidden", marginBottom: 14 }}>
+                  <div style={{ height: 2, background: "var(--border-subtle)", borderRadius: 1, overflow: "hidden", marginBottom: 14 }}>
                     <div style={{
                       height: "100%", borderRadius: 1,
                       width: `${Math.round((s.remaining / (s.total ?? 60)) * 100)}%`,
-                      background: "#ef4444",
+                      background: "var(--danger)",
                     }} />
                   </div>
                   <a href={`https://pharmeasy.in/search/all?name=${s.name}`} target="_blank"
                     style={{
-                      fontSize: 12, color: "#555", textDecoration: "none",
-                      borderBottom: "1px solid #222", paddingBottom: 1,
+                      fontSize: 12, color: "var(--text-muted)", textDecoration: "none",
+                      borderBottom: "1px solid var(--border-default)", paddingBottom: 1,
                     }}>
                     Reorder on Pharmeasy →
                   </a>
@@ -518,21 +519,21 @@ export default function PatientDashboard() {
 
           {/* Follow up */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.27 }}>
-            <h2 style={{ fontSize: 13, color: "#666", fontWeight: 400, letterSpacing: "0.02em", marginBottom: 20 }}>
+            <h2 style={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 400, letterSpacing: "0.02em", marginBottom: 20 }}>
               NEXT APPOINTMENT
             </h2>
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
               <div style={{
                 width: 40, height: 40, borderRadius: 8, flexShrink: 0,
-                border: "1px solid #1a1a1a",
+                border: "1px solid var(--border-default)",
                 display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
               }}>
-                <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", lineHeight: 1 }}>22</span>
-                <span style={{ fontSize: 8, color: "#444", letterSpacing: "0.06em", marginTop: 1 }}>JUN</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1 }}>22</span>
+                <span style={{ fontSize: 8, color: "var(--text-muted)", letterSpacing: "0.06em", marginTop: 1 }}>JUN</span>
               </div>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 500, color: "#e8e8e8" }}>Dr. Priya Mehta</div>
-                <div style={{ fontSize: 12, color: "#444", marginTop: 3 }}>In 3 days · 10:00 AM</div>
+                <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text-primary)" }}>Dr. Priya Mehta</div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 3 }}>In 3 days · 10:00 AM</div>
               </div>
             </div>
           </motion.div>
