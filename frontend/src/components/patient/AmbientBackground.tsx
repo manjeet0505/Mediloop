@@ -1,9 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-
 const NODE_COUNT = 14;
-
 function useMesh() {
   const [nodes] = useState(() =>
     Array.from({ length: NODE_COUNT }, () => ({
@@ -15,10 +13,8 @@ function useMesh() {
   );
   return nodes;
 }
-
 export default function AmbientBackground({ accent = "#6366f1", glowY = 30 }: { accent?: string; glowY?: number }) {
   const nodes = useMesh();
-
   // connect nearby nodes only (avoid spider-web clutter)
   const lines: { x1: number; y1: number; x2: number; y2: number }[] = [];
   for (let i = 0; i < nodes.length; i++) {
@@ -29,7 +25,6 @@ export default function AmbientBackground({ accent = "#6366f1", glowY = 30 }: { 
       if (dist < 22) lines.push({ x1: nodes[i].x, y1: nodes[i].y, x2: nodes[j].x, y2: nodes[j].y });
     }
   }
-
   return (
   <div style={{
     position: "fixed", inset: 0, zIndex: 0,
@@ -43,13 +38,10 @@ export default function AmbientBackground({ accent = "#6366f1", glowY = 30 }: { 
       transform: "translate(-50%, -50%)",
       width: 900,
       height: 500,
-      background: `radial-gradient(ellipse at center, ${accent}22 0%, ${accent}0a 40%, transparent 70%)`,
+      background: `radial-gradient(ellipse at center, color-mix(in srgb, ${accent} 13%, transparent) 0%, color-mix(in srgb, ${accent} 4%, transparent) 40%, transparent 70%)`,
       filter: "blur(40px)",
     }} />
-
     {/* Neural mesh */}
-    ...
-      {/* Neural mesh */}
       <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none"
         style={{ position: "absolute", inset: 0, opacity: 0.35 }}>
         {lines.map((l, i) => (
@@ -64,7 +56,6 @@ export default function AmbientBackground({ accent = "#6366f1", glowY = 30 }: { 
           />
         ))}
       </svg>
-
       {/* ECG scan line — thin, drifts down slowly, loops */}
       <motion.svg
         width="140%" height="60" viewBox="0 0 700 60"
