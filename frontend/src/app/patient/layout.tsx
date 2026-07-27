@@ -32,9 +32,9 @@ function ProfileMenu({ user }: { user: any }) {
       <button onClick={() => setOpen(o => !o)}
         style={{
           width: 30, height: 30, borderRadius: "50%", cursor: "pointer",
-          background: "#1a1a1a", border: "1px solid #2a2a2a",
+          background: "var(--bg-overlay)", border: "1px solid var(--border-subtle)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 11, fontWeight: 600, color: "#888", fontFamily: "inherit",
+          fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", fontFamily: "inherit",
         }}>
         {initials}
       </button>
@@ -48,14 +48,14 @@ function ProfileMenu({ user }: { user: any }) {
             style={{
               position: "absolute", top: "calc(100% + 8px)", right: 0,
               width: 220, borderRadius: 12,
-              background: "#0a0a0a", border: "1px solid #1f1f1f",
+              background: "var(--bg-surface)", border: "1px solid var(--border-subtle)",
               zIndex: 50, overflow: "hidden",
             }}>
-            <div style={{ padding: "14px 16px", borderBottom: "1px solid #141414" }}>
-              <div style={{ fontSize: 13, fontWeight: 500, color: "#e8e8e8", marginBottom: 2 }}>
+            <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--border-subtle)" }}>
+              <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 2 }}>
                 {user?.full_name ?? "Patient"}
               </div>
-              <div style={{ fontSize: 11.5, color: "#444" }}>{user?.email}</div>
+              <div style={{ fontSize: 11.5, color: "var(--text-muted)" }}>{user?.email}</div>
             </div>
             <div style={{ padding: 6 }}>
               {[
@@ -64,16 +64,16 @@ function ProfileMenu({ user }: { user: any }) {
               ].map((item, i) => (
                 <a key={i} href={item.href} style={{
                   display: "block", padding: "8px 10px", borderRadius: 7,
-                  fontSize: 13, color: "#666", textDecoration: "none",
+                  fontSize: 13, color: "var(--text-secondary)", textDecoration: "none",
                 }}>
                   {item.label}
                 </a>
               ))}
-              <div style={{ height: 1, background: "#141414", margin: "4px 0" }} />
+              <div style={{ height: 1, background: "var(--border-subtle)", margin: "4px 0" }} />
               <button onClick={() => authService.logout()} style={{
                 display: "block", width: "100%", padding: "8px 10px", borderRadius: 7,
                 border: "none", background: "transparent", fontSize: 13,
-                color: "#c0392b", cursor: "pointer", textAlign: "left", fontFamily: "inherit",
+                color: "var(--danger)", cursor: "pointer", textAlign: "left", fontFamily: "inherit",
               }}>
                 Log out
               </button>
@@ -100,13 +100,13 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
   if (!mounted) return null;
 
   return (
-    <div style={{ minHeight: "100vh", background: "#000", color: "#e8e8e8", fontFamily: "-apple-system, 'Inter', sans-serif" }}>
-     <AmbientBackground accent="#6366f1" glowY={22} />
+    <div style={{ minHeight: "100vh", background: "var(--bg-page)", color: "var(--text-primary)" }}>
+      <AmbientBackground accent="var(--accent-primary)" glowY={22} />
       {/* Top nav */}
       <header style={{
         position: "sticky", top: 0, zIndex: 20,
-        borderBottom: "1px solid #141414",
-        background: "rgba(0,0,0,0.9)",
+        borderBottom: "1px solid var(--border-subtle)",
+        background: "color-mix(in srgb, var(--bg-page) 90%, transparent)",
         backdropFilter: "blur(12px)",
       }}>
         <div style={{
@@ -118,11 +118,11 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
           <a href="/patient/dashboard" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none", flexShrink: 0 }}>
             <div style={{
               width: 22, height: 22, borderRadius: 6,
-              background: "#fff",
+              background: "var(--text-primary)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontWeight: 800, fontSize: 11, color: "#000",
+              fontWeight: 800, fontSize: 11, color: "var(--bg-page)",
             }}>M</div>
-            <span style={{ fontSize: 14, fontWeight: 600, color: "#fff", letterSpacing: "-0.01em" }}>MedLoop</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>MedLoop</span>
           </a>
 
           {/* Nav */}
@@ -133,8 +133,8 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
                 <a key={item.href} href={item.href} style={{
                   padding: "0 14px", height: 52, display: "flex", alignItems: "center",
                   fontSize: 13, textDecoration: "none",
-                  color: active ? "#fff" : "#555",
-                  borderBottom: active ? "1px solid #fff" : "1px solid transparent",
+                  color: active ? "var(--text-primary)" : "var(--text-muted)",
+                  borderBottom: active ? "1px solid var(--text-primary)" : "1px solid transparent",
                   transition: "color 0.15s",
                   marginBottom: "-1px",
                 }}>
@@ -148,23 +148,23 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <button style={{
               position: "relative", background: "transparent",
-              border: "1px solid #1f1f1f", borderRadius: 7,
-              padding: "5px 8px", cursor: "pointer", color: "#555",
+              border: "1px solid var(--border-subtle)", borderRadius: 7,
+              padding: "5px 8px", cursor: "pointer", color: "var(--text-muted)",
             }}>
               <i className="ti ti-bell" style={{ fontSize: 14 }} />
               <span style={{
                 position: "absolute", top: 4, right: 4,
-                width: 5, height: 5, borderRadius: "50%", background: "#ef4444",
+                width: 5, height: 5, borderRadius: "50%", background: "var(--danger)",
               }} />
             </button>
-            <div style={{ width: 1, height: 18, background: "#1f1f1f" }} />
+            <div style={{ width: 1, height: 18, background: "var(--border-subtle)" }} />
             <ProfileMenu user={user} />
           </div>
         </div>
 
         <div style={{
           maxWidth: 1100, margin: "0 auto", padding: "0 32px 10px",
-          borderTop: "1px solid #0d0d0d",
+          borderTop: "1px solid var(--border-subtle)",
         }}>
           <div style={{ paddingTop: 8 }}>
             <AgentConsole />
@@ -186,8 +186,7 @@ export default function PatientLayout({ children }: { children: React.ReactNode 
       </main>
 
       <style jsx global>{`
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        a:hover { color: #ccc !important; }
+        a:hover { opacity: 0.85; }
       `}</style>
     </div>
   );
