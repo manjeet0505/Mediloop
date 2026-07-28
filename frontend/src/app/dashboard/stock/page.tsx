@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { authService } from "@/lib/auth";
-import { EASE, CountUp, MouseGlow, UnderlineSearch } from "@/components/ui/PremiumUI";
+import { EASE, CountUp, MouseGlow, UnderlineSearch, TiltCard } from "@/components/ui/PremiumUI";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -47,8 +47,8 @@ const sectionVariants = {
   show: { transition: { staggerChildren: 0.08 } },
 };
 const cardVariants = {
-  hidden: { opacity: 0, y: 14 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: EASE } },
+  hidden: { opacity: 0, y: 14, filter: "blur(4px)" },
+  show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.45, ease: EASE } },
 };
 
 export default function StockPage() {
@@ -95,77 +95,83 @@ export default function StockPage() {
         layout
         variants={cardVariants}
         exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.2 } }}
-        whileHover={{ y: -3, borderColor: "var(--border-default)" }}
         transition={{ layout: { duration: 0.35, ease: EASE } }}
-        style={{
-          position: "relative",
-          background: "var(--bg-surface)",
-          border: "1px solid var(--border-subtle)",
-          borderRadius: 14, padding: 18, overflow: "hidden",
-          cursor: "default",
-        }}
       >
-        {isCritical && (
+        <TiltCard style={{ height: "100%" }}>
           <motion.div
-            animate={{ opacity: [0.35, 0.7, 0.35] }}
-            transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+            whileHover={{ y: -3, borderColor: "var(--border-default)" }}
+            transition={{ duration: 0.2 }}
             style={{
-              position: "absolute", top: -20, right: -20, width: 90, height: 90,
-              borderRadius: "50%", background: color, filter: "blur(30px)", opacity: 0.1,
-              pointerEvents: "none",
+              position: "relative",
+              background: "var(--bg-surface)",
+              border: "1px solid var(--border-subtle)",
+              borderRadius: 14, padding: 18, overflow: "hidden",
+              cursor: "default", height: "100%",
             }}
-          />
-        )}
+          >
+            {isCritical && (
+              <motion.div
+                animate={{ opacity: [0.35, 0.7, 0.35] }}
+                transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                style={{
+                  position: "absolute", top: -20, right: -20, width: 90, height: 90,
+                  borderRadius: "50%", background: color, filter: "blur(30px)", opacity: 0.1,
+                  pointerEvents: "none",
+                }}
+              />
+            )}
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12, position: "relative" }}>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-              <div style={{ width: 6, height: 6, borderRadius: "50%", background: color }} />
-              <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)" }}>{s.medicine_name}</span>
-              {s.dosage && <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{s.dosage}</span>}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12, position: "relative" }}>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: color }} />
+                  <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)" }}>{s.medicine_name}</span>
+                  {s.dosage && <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{s.dosage}</span>}
+                </div>
+                <a href={`/dashboard/patients/${s.patient_id}`}
+                  style={{ fontSize: 12, color: "var(--text-muted)", textDecoration: "none", display: "inline-block" }}>
+                  {s.patient_name} →
+                </a>
+              </div>
+              <span style={{
+                fontSize: 10, color, fontFamily: "monospace", fontWeight: 600,
+              }}>
+                {statusLabel(s.days_left)}
+              </span>
             </div>
-            <a href={`/dashboard/patients/${s.patient_id}`}
-              style={{ fontSize: 12, color: "var(--text-muted)", textDecoration: "none", display: "inline-block" }}>
-              {s.patient_name} →
-            </a>
-          </div>
-          <span style={{
-            fontSize: 10, color, fontFamily: "monospace", fontWeight: 600,
-          }}>
-            {statusLabel(s.days_left)}
-          </span>
-        </div>
 
-        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 10, position: "relative" }}>
-          <div>
-            <div style={{ marginBottom: 4 }}>
-              <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{s.remaining} of {s.total} doses</span>
+            <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 10, position: "relative" }}>
+              <div>
+                <div style={{ marginBottom: 4 }}>
+                  <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{s.remaining} of {s.total} doses</span>
+                </div>
+                <span style={{ fontSize: 18, fontWeight: 700, color }}>
+                  {s.days_left}<span style={{ fontSize: 11, fontWeight: 400, color: "var(--text-muted)" }}> days left</span>
+                </span>
+              </div>
+              {s.trend && <Sparkline trend={s.trend} color={color} />}
             </div>
-            <span style={{ fontSize: 18, fontWeight: 700, color }}>
-              {s.days_left}<span style={{ fontSize: 11, fontWeight: 400, color: "var(--text-muted)" }}> days left</span>
-            </span>
-          </div>
-          {s.trend && <Sparkline trend={s.trend} color={color} />}
-        </div>
 
-        <div style={{ height: 4, background: "var(--border-subtle)", borderRadius: 2, overflow: "hidden", marginBottom: 12, position: "relative" }}>
-          <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }}
-            transition={{ duration: 0.7, ease: EASE }}
-            style={{ height: "100%", background: color, borderRadius: 2 }} />
-        </div>
+            <div style={{ height: 4, background: "var(--border-subtle)", borderRadius: 2, overflow: "hidden", marginBottom: 12, position: "relative" }}>
+              <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }}
+                transition={{ duration: 0.7, ease: EASE }}
+                style={{ height: "100%", background: color, borderRadius: 2 }} />
+            </div>
 
-        {s.days_left <= 7 && (
-          <a href={`https://pharmeasy.in/search/all?name=${s.medicine_name}`} target="_blank"
-            style={{
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-              padding: "7px 0", fontSize: 12, fontWeight: 500,
-              textDecoration: "none", color: "var(--text-secondary)",
-              borderTop: "1px solid var(--border-subtle)", marginTop: 2, paddingTop: 10,
-            }}>
-            <i className="ti ti-shopping-cart" style={{ fontSize: 13 }} />
-            Reorder
-          </a>
-        )}
+            {s.days_left <= 7 && (
+              <a href={`https://pharmeasy.in/search/all?name=${s.medicine_name}`} target="_blank"
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                  padding: "7px 0", fontSize: 12, fontWeight: 500,
+                  textDecoration: "none", color: "var(--text-secondary)",
+                  borderTop: "1px solid var(--border-subtle)", marginTop: 2, paddingTop: 10,
+                }}>
+                <i className="ti ti-shopping-cart" style={{ fontSize: 13 }} />
+                Reorder
+              </a>
+            )}
+          </motion.div>
+        </TiltCard>
       </motion.div>
     );
   };
