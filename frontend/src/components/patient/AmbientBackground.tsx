@@ -37,7 +37,7 @@ export default function AmbientBackground({ accent = "#6366f1", glowY = 30 }: { 
       left: "50%",
       transform: "translate(-50%, -50%)",
       width: 900,
-      height: 500,
+      height: 900,
       background: `radial-gradient(ellipse at center, color-mix(in srgb, ${accent} 13%, transparent) 0%, color-mix(in srgb, ${accent} 4%, transparent) 40%, transparent 70%)`,
       filter: "blur(40px)",
     }} />
