@@ -88,11 +88,6 @@ async def get_all_stock(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """
-    Clinic-wide stock view — every medicine across every active patient,
-    sorted by urgency, with a 14-day depletion trend derived from real
-    taken-dose history (for the sparkline).
-    """
     if current_user.role != "clinic":
         raise HTTPException(status_code=403, detail="Clinic access only")
 
@@ -116,7 +111,6 @@ async def get_all_stock(
         remaining = max(s.total_quantity - s.doses_taken, 0)
         days_left = remaining // s.doses_per_day if s.doses_per_day > 0 else remaining
 
-        # trend: reconstruct daily remaining count over the last 14 days from taken-dose history
         result = await db.execute(
             select(DoseEvent).where(
                 DoseEvent.patient_id == s.patient_id,
@@ -212,6 +206,50 @@ async def get_patient_medicines(
         })
 
     return output
+
+
+@router.get("/{patient_id}/dose-history")
+async def get_patient_dose_history(
+    patient_id: str,
+    days: int = 14,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Real dose log for the Patient Detail page's Dose History tab —
+    trailing N days, newest first, plus this week's adherence %.
+    """
+    patient = await get_owned_patient(patient_id, current_user, db)
+
+    window_start = datetime.now(timezone.utc) - timedelta(days=days)
+    result = await db.execute(
+        select(DoseEvent)
+        .where(DoseEvent.patient_id == patient.id, DoseEvent.scheduled_time >= window_start)
+        .order_by(DoseEvent.scheduled_time.desc())
+    )
+    doses = result.scalars().all()
+
+    history = [
+        {
+            "id": d.id,
+            "medicine_name": d.medicine_name,
+            "dosage": d.dosage or "",
+            "scheduled_time": d.scheduled_time.isoformat(),
+            "status": d.status,
+            "taken_at": d.taken_at.isoformat() if d.taken_at else None,
+        }
+        for d in doses
+    ]
+
+    # this week's adherence (last 7 days)
+    week_start = datetime.now(timezone.utc) - timedelta(days=7)
+    week_doses = [d for d in doses if d.scheduled_time >= week_start]
+    taken = sum(1 for d in week_doses if d.status == "taken")
+    missed = sum(1 for d in week_doses if d.status == "missed")
+    counted = taken + missed
+    week_adherence = round((taken / counted) * 100) if counted > 0 else 100
+
+    return {"week_adherence": week_adherence, "history": history}
 
 
 @router.patch("/{patient_id}", response_model=PatientResponse)
