@@ -22,15 +22,6 @@ const MEDICINES = [
   { name: "Vitamin D3", dosage: "60000IU", frequency: "Once weekly", duration: "8 weeks", times: 1, color: "#10b981" },
 ];
 
-const DOSE_HISTORY = [
-  { date: "Today, 9:00 AM", medicine: "Metformin 500mg", status: "taken", time: "9:03 AM" },
-  { date: "Today, 9:00 AM", medicine: "Amlodipine 5mg", status: "taken", time: "9:03 AM" },
-  { date: "Yesterday, 9:00 PM", medicine: "Metformin 500mg", status: "missed", time: null },
-  { date: "Yesterday, 9:00 AM", medicine: "Metformin 500mg", status: "taken", time: "9:15 AM" },
-  { date: "Yesterday, 9:00 AM", medicine: "Amlodipine 5mg", status: "taken", time: "9:15 AM" },
-  { date: "2 days ago, 9:00 AM", medicine: "Metformin 500mg", status: "taken", time: "8:58 AM" },
-];
-
 const VITALS = [
   { label: "Blood Pressure", value: "128/82", unit: "mmHg", status: "normal", icon: "ti-heart-rate-monitor" },
   { label: "Blood Sugar", value: "142", unit: "mg/dL", status: "warning", icon: "ti-droplet" },
@@ -78,6 +69,22 @@ function AdherenceRing({ value }: { value: number }) {
   );
 }
 
+/** "Today, 9:00 AM" / "Yesterday, 9:00 PM" / "3 days ago, 8:00 AM" */
+function formatDoseDate(iso: string) {
+  const d = new Date(iso);
+  const now = new Date();
+  const dayDiff = Math.floor((new Date(now.toDateString()).getTime() - new Date(d.toDateString()).getTime()) / 86400000);
+  const time = d.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true });
+  if (dayDiff === 0) return `Today, ${time}`;
+  if (dayDiff === 1) return `Yesterday, ${time}`;
+  return `${dayDiff} days ago, ${time}`;
+}
+
+function formatTakenTime(iso: string | null) {
+  if (!iso) return null;
+  return new Date(iso).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true });
+}
+
 export default function PatientDetailPage() {
   const params = useParams();
   const id = params?.id as string;
@@ -104,6 +111,31 @@ export default function PatientDetailPage() {
 
   useEffect(() => {
     if (activeTab === "Medicines" || activeTab === "Stock") fetchMedicines();
+  }, [activeTab, id]);
+
+  // ── Dose History — real data ──
+  const [doseHistory, setDoseHistory] = useState<any[]>([]);
+  const [weekAdherence, setWeekAdherence] = useState<number | null>(null);
+  const [loadingDoseHistory, setLoadingDoseHistory] = useState(false);
+
+  const fetchDoseHistory = () => {
+    const token = authService.getToken();
+    if (!token) return;
+    setLoadingDoseHistory(true);
+    fetch(`${API}/api/v1/patients/${id}/dose-history?days=14`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(r => r.json())
+      .then(d => {
+        setDoseHistory(Array.isArray(d.history) ? d.history : []);
+        setWeekAdherence(typeof d.week_adherence === "number" ? d.week_adherence : null);
+      })
+      .catch(() => { setDoseHistory([]); setWeekAdherence(null); })
+      .finally(() => setLoadingDoseHistory(false));
+  };
+
+  useEffect(() => {
+    if (activeTab === "Dose History") fetchDoseHistory();
   }, [activeTab, id]);
 
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -438,7 +470,7 @@ export default function PatientDetailPage() {
             </div>
           )}
 
-          {/* ── DOSE HISTORY TAB ── */}
+          {/* ── DOSE HISTORY TAB — now real data ── */}
           {activeTab === "Dose History" && (
             <div>
               <div style={{
@@ -446,33 +478,59 @@ export default function PatientDetailPage() {
                 paddingBottom: 14, marginBottom: 4, borderBottom: "1px solid var(--border-subtle)",
               }}>
                 <span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--text-primary)" }}>Dose Log</span>
-                <span style={{ fontSize: 11.5, color: "var(--success)", fontFamily: "monospace" }}>87% this week</span>
-              </div>
-              {DOSE_HISTORY.map((dose, i) => (
-                <motion.div key={i}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.06 }}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 12,
-                    padding: "13px 0",
-                    borderBottom: i < DOSE_HISTORY.length - 1 ? "1px solid var(--border-subtle)" : "none",
-                  }}
-                >
-                  <i className={`ti ${dose.status === "taken" ? "ti-check" : "ti-x"}`}
-                    style={{ fontSize: 14, color: dose.status === "taken" ? "var(--success)" : "var(--danger)", width: 16, flexShrink: 0 }} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 2 }}>{dose.medicine}</div>
-                    <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{dose.date}</div>
-                  </div>
-                  <span style={{
-                    fontSize: 11.5, fontFamily: "monospace",
-                    color: dose.status === "taken" ? "var(--success)" : "var(--danger)",
-                  }}>
-                    {dose.status === "taken" ? dose.time : "missed"}
+                {weekAdherence !== null && (
+                  <span style={{ fontSize: 11.5, color: weekAdherence >= 80 ? "var(--success)" : "var(--warning)", fontFamily: "monospace" }}>
+                    {weekAdherence}% this week
                   </span>
-                </motion.div>
-              ))}
+                )}
+              </div>
+
+              {loadingDoseHistory ? (
+                <div style={{ textAlign: "center", padding: 40 }}>
+                  <motion.div animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    style={{ width: 28, height: 28, borderRadius: "50%", margin: "0 auto", border: "2px solid var(--border-subtle)", borderTop: "2px solid var(--accent-primary)" }} />
+                </div>
+              ) : doseHistory.length === 0 ? (
+                <div style={{ padding: "48px 0", textAlign: "center" }}>
+                  <i className="ti ti-clipboard-list" style={{ fontSize: 40, color: "var(--text-muted)", display: "block", marginBottom: 12, opacity: 0.5 }} />
+                  <p style={{ fontSize: 14, fontWeight: 500, color: "var(--text-secondary)" }}>No dose history yet</p>
+                  <p style={{ fontSize: 12.5, color: "var(--text-muted)", marginTop: 4 }}>
+                    History will appear once doses are scheduled and logged
+                  </p>
+                </div>
+              ) : (
+                doseHistory.map((dose, i) => (
+                  <motion.div key={dose.id}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: Math.min(i * 0.04, 0.6) }}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 12,
+                      padding: "13px 0",
+                      borderBottom: i < doseHistory.length - 1 ? "1px solid var(--border-subtle)" : "none",
+                    }}
+                  >
+                    <i className={`ti ${dose.status === "taken" ? "ti-check" : dose.status === "missed" ? "ti-x" : "ti-clock"}`}
+                      style={{
+                        fontSize: 14, width: 16, flexShrink: 0,
+                        color: dose.status === "taken" ? "var(--success)" : dose.status === "missed" ? "var(--danger)" : "var(--text-muted)",
+                      }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)", marginBottom: 2 }}>
+                        {dose.medicine_name}{dose.dosage ? ` ${dose.dosage}` : ""}
+                      </div>
+                      <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{formatDoseDate(dose.scheduled_time)}</div>
+                    </div>
+                    <span style={{
+                      fontSize: 11.5, fontFamily: "monospace",
+                      color: dose.status === "taken" ? "var(--success)" : dose.status === "missed" ? "var(--danger)" : "var(--text-muted)",
+                    }}>
+                      {dose.status === "taken" ? formatTakenTime(dose.taken_at) : dose.status === "missed" ? "missed" : "pending"}
+                    </span>
+                  </motion.div>
+                ))
+              )}
             </div>
           )}
 
