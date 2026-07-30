@@ -135,8 +135,8 @@ export default function PatientDetailPage() {
   };
 
   useEffect(() => {
-    if (activeTab === "Dose History") fetchDoseHistory();
-  }, [activeTab, id]);
+  if (activeTab === "Dose History" || activeTab === "Overview") fetchDoseHistory();
+}, [activeTab, id]);
 
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [prescriptions, setPrescriptions] = useState<any[]>([]);
