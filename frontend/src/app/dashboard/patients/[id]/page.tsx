@@ -16,18 +16,18 @@ const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 const TABS = ["Overview", "Medicines", "Dose History", "Stock", "Prescriptions"];
 
-const MEDICINES = [
-  { name: "Metformin", dosage: "500mg", frequency: "Twice daily", duration: "30 days", times: 2, color: "#6366f1" },
-  { name: "Amlodipine", dosage: "5mg", frequency: "Once daily", duration: "60 days", times: 1, color: "#06b6d4" },
-  { name: "Vitamin D3", dosage: "60000IU", frequency: "Once weekly", duration: "8 weeks", times: 1, color: "#10b981" },
-];
+// const MEDICINES = [
+//   { name: "Metformin", dosage: "500mg", frequency: "Twice daily", duration: "30 days", times: 2, color: "#6366f1" },
+//   { name: "Amlodipine", dosage: "5mg", frequency: "Once daily", duration: "60 days", times: 1, color: "#06b6d4" },
+//   { name: "Vitamin D3", dosage: "60000IU", frequency: "Once weekly", duration: "8 weeks", times: 1, color: "#10b981" },
+// ];
 
-const VITALS = [
-  { label: "Blood Pressure", value: "128/82", unit: "mmHg", status: "normal", icon: "ti-heart-rate-monitor" },
-  { label: "Blood Sugar", value: "142", unit: "mg/dL", status: "warning", icon: "ti-droplet" },
-  { label: "Weight", value: "72", unit: "kg", status: "normal", icon: "ti-scale" },
-  { label: "SpO2", value: "98", unit: "%", status: "normal", icon: "ti-lungs" },
-];
+// const VITALS = [
+//   { label: "Blood Pressure", value: "128/82", unit: "mmHg", status: "normal", icon: "ti-heart-rate-monitor" },
+//   { label: "Blood Sugar", value: "142", unit: "mg/dL", status: "warning", icon: "ti-droplet" },
+//   { label: "Weight", value: "72", unit: "kg", status: "normal", icon: "ti-scale" },
+//   { label: "SpO2", value: "98", unit: "%", status: "normal", icon: "ti-lungs" },
+// ];
 
 function StatusDot({ status }: { status: string }) {
   const color = status === "normal" ? "var(--success)" : status === "warning" ? "var(--warning)" : "var(--danger)";
