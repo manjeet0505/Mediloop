@@ -91,7 +91,7 @@ export default function PatientDetailPage() {
   const [patient, setPatient] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("Overview");
-  const [adherence] = useState(87);
+ 
 
   const [realMedicines, setRealMedicines] = useState<any[]>([]);
   const [loadingMedicines, setLoadingMedicines] = useState(false);
@@ -117,6 +117,8 @@ export default function PatientDetailPage() {
   const [doseHistory, setDoseHistory] = useState<any[]>([]);
   const [weekAdherence, setWeekAdherence] = useState<number | null>(null);
   const [loadingDoseHistory, setLoadingDoseHistory] = useState(false);
+   const takenCount = doseHistory.filter(d => d.status === "taken").length;
+const missedCount = doseHistory.filter(d => d.status === "missed").length;
 
   const fetchDoseHistory = () => {
     const token = authService.getToken();
@@ -312,60 +314,37 @@ export default function PatientDetailPage() {
           {activeTab === "Overview" && (
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 28 }}>
 
-              {/* Adherence */}
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", marginBottom: 16 }}>
-                  Adherence Score
-                </div>
-                <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}>
-                  <AdherenceRing value={adherence} />
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                  {[
-                    { l: "Taken", v: "52", c: "var(--success)" },
-                    { l: "Missed", v: "8", c: "var(--danger)" },
-                    { l: "Streak", v: "5 days", c: "var(--accent-primary)" },
-                    { l: "This week", v: "91%", c: "var(--warning)" },
-                  ].map((s, i) => (
-                    <div key={i}>
-                      <div style={{ fontSize: 15, fontWeight: 600, color: s.c }}>{s.v}</div>
-                      <div style={{ fontSize: 10.5, color: "var(--text-muted)" }}>{s.l}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
+             {/* Adherence */}
+<div>
+  <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", marginBottom: 16 }}>
+    Adherence Score
+  </div>
+  <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}>
+    <AdherenceRing value={weekAdherence ?? 0} />
+  </div>
+  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
+    {[
+      { l: "Taken (14d)", v: String(takenCount), c: "var(--success)" },
+      { l: "Missed (14d)", v: String(missedCount), c: "var(--danger)" },
+      { l: "This week", v: weekAdherence !== null ? `${weekAdherence}%` : "—", c: "var(--warning)" },
+    ].map((s, i) => (
+      <div key={i}>
+        <div style={{ fontSize: 15, fontWeight: 600, color: s.c }}>{s.v}</div>
+        <div style={{ fontSize: 10.5, color: "var(--text-muted)" }}>{s.l}</div>
+      </div>
+    ))}
+  </div>
+</div>
               {/* Vitals */}
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", marginBottom: 12 }}>
-                  Latest Vitals
-                </div>
-                <div>
-                  {VITALS.map((v, i) => (
-                    <motion.div key={i}
-                      initial={{ opacity: 0, x: -8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.07 }}
-                      style={{
-                        display: "flex", alignItems: "center", justifyContent: "space-between",
-                        padding: "11px 0",
-                        borderBottom: i < VITALS.length - 1 ? "1px solid var(--border-subtle)" : "none",
-                      }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                        <i className={`ti ${v.icon}`} style={{ fontSize: 14, color: "var(--text-muted)" }} />
-                        <span style={{ fontSize: 12.5, color: "var(--text-secondary)" }}>{v.label}</span>
-                      </div>
-                      <div style={{ textAlign: "right" }}>
-                        <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--text-primary)" }}>
-                          {v.value} <span style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 400 }}>{v.unit}</span>
-                        </div>
-                        <StatusDot status={v.status} />
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
+<div>
+  <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", marginBottom: 12 }}>
+    Latest Vitals
+  </div>
+  <div style={{ padding: "24px 0", textAlign: "center" }}>
+    <i className="ti ti-heart-rate-monitor" style={{ fontSize: 28, color: "var(--text-muted)", display: "block", marginBottom: 8, opacity: 0.4 }} />
+    <p style={{ fontSize: 12, color: "var(--text-muted)" }}>Vitals tracking arrives with the Health Monitoring agent</p>
+  </div>
+</div>
 
               {/* Quick info */}
               <div>
@@ -393,25 +372,29 @@ export default function PatientDetailPage() {
                 </div>
 
                 <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", marginBottom: 12 }}>
-                  Active Medicines
-                </div>
-                <div>
-                  {MEDICINES.map((m, i) => (
-                    <div key={i} style={{
-                      display: "flex", alignItems: "center", gap: 8,
-                      padding: "8px 0",
-                      borderBottom: i < MEDICINES.length - 1 ? "1px solid var(--border-subtle)" : "none"
-                    }}>
-                      <div style={{ width: 6, height: 6, borderRadius: "50%", background: m.color, flexShrink: 0 }} />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 12.5, fontWeight: 500, color: "var(--text-primary)" }}>
-                          {m.name} {m.dosage}
-                        </div>
-                        <div style={{ fontSize: 10.5, color: "var(--text-muted)" }}>{m.frequency}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+  Active Medicines
+</div>
+<div>
+  {realMedicines.length === 0 ? (
+    <p style={{ fontSize: 12, color: "var(--text-muted)", padding: "8px 0" }}>No active medicines</p>
+  ) : (
+    realMedicines.slice(0, 4).map((m, i) => (
+      <div key={i} style={{
+        display: "flex", alignItems: "center", gap: 8,
+        padding: "8px 0",
+        borderBottom: i < Math.min(realMedicines.length, 4) - 1 ? "1px solid var(--border-subtle)" : "none"
+      }}>
+        <div style={{ width: 6, height: 6, borderRadius: "50%", background: m.color || "var(--accent-primary)", flexShrink: 0 }} />
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 12.5, fontWeight: 500, color: "var(--text-primary)" }}>
+            {m.name} {m.dosage}
+          </div>
+          <div style={{ fontSize: 10.5, color: "var(--text-muted)" }}>{m.doses_per_day}x/day</div>
+        </div>
+      </div>
+    ))
+  )}
+</div>
               </div>
             </div>
           )}
