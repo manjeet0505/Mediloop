@@ -109,9 +109,9 @@ export default function PatientDetailPage() {
       .finally(() => setLoadingMedicines(false));
   };
 
-  useEffect(() => {
-    if (activeTab === "Medicines" || activeTab === "Stock") fetchMedicines();
-  }, [activeTab, id]);
+ useEffect(() => {
+  if (activeTab === "Medicines" || activeTab === "Stock" || activeTab === "Overview") fetchMedicines();
+}, [activeTab, id]);
 
   // ── Dose History — real data ──
   const [doseHistory, setDoseHistory] = useState<any[]>([]);
