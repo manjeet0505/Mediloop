@@ -671,59 +671,94 @@ const handleSendReminder = () => {
       />
 
       {showReportModal && (
-  <div
-    onClick={() => setShowReportModal(false)}
-    style={{
-      position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      zIndex: 100, padding: 20,
-    }}
-  >
+  <AnimatePresence>
     <motion.div
-      onClick={(e) => e.stopPropagation()}
-      initial={{ opacity: 0, scale: 0.96 }}
-      animate={{ opacity: 1, scale: 1 }}
+      key="report-backdrop"
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      onClick={() => setShowReportModal(false)}
       style={{
-        background: "var(--bg-surface)", borderRadius: 16, padding: 32,
-        maxWidth: 480, width: "100%", maxHeight: "85vh", overflowY: "auto",
-        border: "1px solid var(--border-subtle)",
+        position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        zIndex: 100, padding: 20,
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>Patient Report</h2>
-        <button onClick={() => setShowReportModal(false)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: "var(--text-muted)" }}>✕</button>
-      </div>
-
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 4 }}>PATIENT</div>
-        <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)" }}>{patient.full_name}</div>
-        <div style={{ fontSize: 12.5, color: "var(--text-secondary)", marginTop: 2 }}>{patient.phone} · Age {patient.age ?? "—"}</div>
-      </div>
-
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 8 }}>ADHERENCE (14 DAYS)</div>
-        <div style={{ display: "flex", gap: 20 }}>
-          <div><span style={{ fontSize: 20, fontWeight: 700, color: "var(--success)" }}>{takenCount}</span><span style={{ fontSize: 11, color: "var(--text-muted)" }}> taken</span></div>
-          <div><span style={{ fontSize: 20, fontWeight: 700, color: "var(--danger)" }}>{missedCount}</span><span style={{ fontSize: 11, color: "var(--text-muted)" }}> missed</span></div>
-          <div><span style={{ fontSize: 20, fontWeight: 700, color: "var(--text-primary)" }}>{weekAdherence !== null ? `${weekAdherence}%` : "—"}</span><span style={{ fontSize: 11, color: "var(--text-muted)" }}> this week</span></div>
+      <motion.div
+        onClick={(e) => e.stopPropagation()}
+        initial={{ opacity: 0, scale: 0.94, y: 12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.96, y: 8 }}
+        transition={{ duration: 0.25, ease: EASE }}
+        style={{
+          background: "var(--bg-surface)", borderRadius: 20, padding: 0,
+          maxWidth: 460, width: "100%", maxHeight: "82vh", overflow: "hidden",
+          border: "1px solid var(--border-subtle)",
+          boxShadow: "0 24px 60px rgba(0,0,0,0.4)",
+          display: "flex", flexDirection: "column",
+        }}
+      >
+        {/* Header with gradient accent bar */}
+        <div style={{
+          padding: "24px 28px 20px",
+          borderBottom: "1px solid var(--border-subtle)",
+          background: "var(--accent-gradient)",
+          position: "relative",
+        }}>
+          <button onClick={() => setShowReportModal(false)}
+            style={{
+              position: "absolute", top: 16, right: 16,
+              background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 8,
+              width: 28, height: 28, cursor: "pointer", color: "#fff", fontSize: 15,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>✕</button>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.75)", letterSpacing: "0.06em", marginBottom: 6 }}>
+            PATIENT REPORT
+          </div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: "#fff" }}>{patient.full_name}</div>
+          <div style={{ fontSize: 12.5, color: "rgba(255,255,255,0.8)", marginTop: 3 }}>
+            {patient.phone} · Age {patient.age ?? "—"}
+          </div>
         </div>
-      </div>
 
-      <div>
-        <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 8 }}>ACTIVE MEDICINES</div>
-        {realMedicines.length === 0 ? (
-          <p style={{ fontSize: 12.5, color: "var(--text-muted)" }}>No active medicines</p>
-        ) : (
-          realMedicines.map((m, i) => (
-            <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--border-subtle)" }}>
-              <span style={{ fontSize: 13, color: "var(--text-primary)" }}>{m.name} {m.dosage}</span>
-              <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{m.remaining}/{m.total} left</span>
+        {/* Body */}
+        <div style={{ padding: "22px 28px 28px", overflowY: "auto" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 24, marginBottom: 26 }}>
+            <AdherenceRing value={weekAdherence ?? 0} />
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <div>
+                <span style={{ fontSize: 18, fontWeight: 700, color: "var(--success)" }}>{takenCount}</span>
+                <span style={{ fontSize: 11.5, color: "var(--text-muted)", marginLeft: 6 }}>doses taken (14d)</span>
+              </div>
+              <div>
+                <span style={{ fontSize: 18, fontWeight: 700, color: "var(--danger)" }}>{missedCount}</span>
+                <span style={{ fontSize: 11.5, color: "var(--text-muted)", marginLeft: 6 }}>doses missed (14d)</span>
+              </div>
             </div>
-          ))
-        )}
-      </div>
+          </div>
+
+          <div style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.05em", marginBottom: 10 }}>
+            ACTIVE MEDICINES
+          </div>
+          {realMedicines.length === 0 ? (
+            <p style={{ fontSize: 12.5, color: "var(--text-muted)" }}>No active medicines</p>
+          ) : (
+            realMedicines.map((m, i) => (
+              <div key={i} style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "10px 0",
+                borderBottom: i < realMedicines.length - 1 ? "1px solid var(--border-subtle)" : "none",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: m.color || "var(--accent-primary)" }} />
+                  <span style={{ fontSize: 13.5, fontWeight: 500, color: "var(--text-primary)" }}>{m.name} {m.dosage}</span>
+                </div>
+                <span style={{ fontSize: 12, color: "var(--text-muted)", fontFamily: "monospace" }}>{m.remaining}/{m.total} left</span>
+              </div>
+            ))
+          )}
+        </div>
+      </motion.div>
     </motion.div>
-  </div>
+  </AnimatePresence>
 )}
     </div>
   );
