@@ -277,10 +277,10 @@ const handleSendReminder = () => {
             <i className="ti ti-file-description" style={{ fontSize: 14 }} />
             View Report
           </MagneticButton>
-          <MagneticButton variant="primary" onClick={() => {}} style={{ padding: "8px 14px", fontSize: 12.5 }}>
-            <i className="ti ti-send" style={{ fontSize: 14 }} />
-            Send Reminder
-          </MagneticButton>
+          <MagneticButton variant="primary" onClick={() => { if (!sendingReminder) handleSendReminder(); }} style={{ padding: "8px 14px", fontSize: 12.5, opacity: sendingReminder ? 0.6 : 1 }}>
+  <i className={`ti ${sendingReminder ? "ti-loader-2" : reminderSent ? "ti-check" : "ti-send"}`} style={{ fontSize: 14 }} />
+  {sendingReminder ? "Sending..." : reminderSent ? "Sent!" : "Send Reminder"}
+</MagneticButton>
         </div>
       </motion.div>
 
