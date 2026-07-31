@@ -142,7 +142,8 @@ const missedCount = doseHistory.filter(d => d.status === "missed").length;
 
 
   const [sendingReminder, setSendingReminder] = useState(false);
-const [reminderSent, setReminderSent] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reminderSent, setReminderSent] = useState(false);
 
 const handleSendReminder = () => {
   const token = authService.getToken();
