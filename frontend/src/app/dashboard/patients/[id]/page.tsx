@@ -140,6 +140,22 @@ const missedCount = doseHistory.filter(d => d.status === "missed").length;
   if (activeTab === "Dose History" || activeTab === "Overview") fetchDoseHistory();
 }, [activeTab, id]);
 
+
+  const [sendingReminder, setSendingReminder] = useState(false);
+const [reminderSent, setReminderSent] = useState(false);
+
+const handleSendReminder = () => {
+  const token = authService.getToken();
+  if (!token) return;
+  setSendingReminder(true);
+  fetch(`${API}/api/v1/reminder/test-reminder/${id}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` }
+  })
+    .then(r => { if (!r.ok) throw new Error(); setReminderSent(true); setTimeout(() => setReminderSent(false), 2500); })
+    .catch(() => alert("Failed to send reminder"))
+    .finally(() => setSendingReminder(false));
+};
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [prescriptions, setPrescriptions] = useState<any[]>([]);
   const [loadingPrescriptions, setLoadingPrescriptions] = useState(false);
