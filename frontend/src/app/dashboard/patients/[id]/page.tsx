@@ -274,7 +274,7 @@ const handleSendReminder = () => {
             <i className="ti ti-edit" style={{ fontSize: 14 }} />
             Edit
           </MagneticButton>
-          <MagneticButton variant="ghost" onClick={() => {}} style={{ padding: "8px 14px", fontSize: 12.5 }}>
+          <MagneticButton variant="ghost" onClick={() => setShowReportModal(true)} style={{ padding: "8px 14px", fontSize: 12.5 }}>
             <i className="ti ti-file-description" style={{ fontSize: 14 }} />
             View Report
           </MagneticButton>
@@ -665,6 +665,62 @@ const handleSendReminder = () => {
           fetchPrescriptions();
         }}
       />
+
+      {showReportModal && (
+  <div
+    onClick={() => setShowReportModal(false)}
+    style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      zIndex: 100, padding: 20,
+    }}
+  >
+    <motion.div
+      onClick={(e) => e.stopPropagation()}
+      initial={{ opacity: 0, scale: 0.96 }}
+      animate={{ opacity: 1, scale: 1 }}
+      style={{
+        background: "var(--bg-surface)", borderRadius: 16, padding: 32,
+        maxWidth: 480, width: "100%", maxHeight: "85vh", overflowY: "auto",
+        border: "1px solid var(--border-subtle)",
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>Patient Report</h2>
+        <button onClick={() => setShowReportModal(false)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: "var(--text-muted)" }}>✕</button>
+      </div>
+
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 4 }}>PATIENT</div>
+        <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text-primary)" }}>{patient.full_name}</div>
+        <div style={{ fontSize: 12.5, color: "var(--text-secondary)", marginTop: 2 }}>{patient.phone} · Age {patient.age ?? "—"}</div>
+      </div>
+
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 8 }}>ADHERENCE (14 DAYS)</div>
+        <div style={{ display: "flex", gap: 20 }}>
+          <div><span style={{ fontSize: 20, fontWeight: 700, color: "var(--success)" }}>{takenCount}</span><span style={{ fontSize: 11, color: "var(--text-muted)" }}> taken</span></div>
+          <div><span style={{ fontSize: 20, fontWeight: 700, color: "var(--danger)" }}>{missedCount}</span><span style={{ fontSize: 11, color: "var(--text-muted)" }}> missed</span></div>
+          <div><span style={{ fontSize: 20, fontWeight: 700, color: "var(--text-primary)" }}>{weekAdherence !== null ? `${weekAdherence}%` : "—"}</span><span style={{ fontSize: 11, color: "var(--text-muted)" }}> this week</span></div>
+        </div>
+      </div>
+
+      <div>
+        <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 8 }}>ACTIVE MEDICINES</div>
+        {realMedicines.length === 0 ? (
+          <p style={{ fontSize: 12.5, color: "var(--text-muted)" }}>No active medicines</p>
+        ) : (
+          realMedicines.map((m, i) => (
+            <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--border-subtle)" }}>
+              <span style={{ fontSize: 13, color: "var(--text-primary)" }}>{m.name} {m.dosage}</span>
+              <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{m.remaining}/{m.total} left</span>
+            </div>
+          ))
+        )}
+      </div>
+    </motion.div>
+  </div>
+)}
     </div>
   );
 }
