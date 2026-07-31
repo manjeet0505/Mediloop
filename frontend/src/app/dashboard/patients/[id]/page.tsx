@@ -151,7 +151,11 @@ const handleSendReminder = () => {
   setSendingReminder(true);
   fetch(`${API}/api/v1/reminder/test-reminder/${id}`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${token}` }
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({})
   })
     .then(r => { if (!r.ok) throw new Error(); setReminderSent(true); setTimeout(() => setReminderSent(false), 2500); })
     .catch(() => alert("Failed to send reminder"))
