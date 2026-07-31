@@ -148,14 +148,22 @@ const missedCount = doseHistory.filter(d => d.status === "missed").length;
 const handleSendReminder = () => {
   const token = authService.getToken();
   if (!token) return;
+
+  if (realMedicines.length === 0) {
+    alert("No active medicines to send a reminder for");
+    return;
+  }
+
+  const med = realMedicines[0];
+  const params = new URLSearchParams({
+    medicine_name: med.name,
+    dosage: med.dosage,
+  });
+
   setSendingReminder(true);
-  fetch(`${API}/api/v1/reminder/test-reminder/${id}`, {
+  fetch(`${API}/api/v1/reminder/test-reminder/${id}?${params.toString()}`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({})
+    headers: { Authorization: `Bearer ${token}` }
   })
     .then(r => { if (!r.ok) throw new Error(); setReminderSent(true); setTimeout(() => setReminderSent(false), 2500); })
     .catch(() => alert("Failed to send reminder"))
