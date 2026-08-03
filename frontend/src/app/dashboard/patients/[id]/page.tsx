@@ -678,7 +678,7 @@ const handleSendReminder = () => {
         }}
       />
 
-      {showReportModal && (
+   {showReportModal && (
   <AnimatePresence>
     <motion.div
       key="report-backdrop"
