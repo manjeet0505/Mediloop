@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { authService } from "@/lib/auth";
 import UploadPrescriptionModal from "@/components/patients/UploadPrescriptionModal";
+import EditPatientModal from "@/components/patients/EditPatientModal";
 import {
   EASE,
   CountUp,
@@ -143,6 +144,7 @@ const missedCount = doseHistory.filter(d => d.status === "missed").length;
 
   const [sendingReminder, setSendingReminder] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [reminderSent, setReminderSent] = useState(false);
 
 const handleSendReminder = () => {
@@ -282,10 +284,10 @@ const handleSendReminder = () => {
         </div>
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <MagneticButton variant="ghost" onClick={() => {}} style={{ padding: "8px 14px", fontSize: 12.5 }}>
-            <i className="ti ti-edit" style={{ fontSize: 14 }} />
-            Edit
-          </MagneticButton>
+         <MagneticButton variant="ghost" onClick={() => setShowEditModal(true)} style={{ padding: "8px 14px", fontSize: 12.5 }}>
+  <i className="ti ti-edit" style={{ fontSize: 14 }} />
+  Edit
+</MagneticButton>
           <MagneticButton variant="ghost" onClick={() => setShowReportModal(true)} style={{ padding: "8px 14px", fontSize: 12.5 }}>
             <i className="ti ti-file-description" style={{ fontSize: 14 }} />
             View Report
@@ -677,7 +679,15 @@ const handleSendReminder = () => {
           fetchPrescriptions();
         }}
       />
-
+      <EditPatientModal
+  isOpen={showEditModal}
+  patient={patient}
+  onClose={() => setShowEditModal(false)}
+  onSuccess={(updated) => {
+    setPatient(updated);
+    setShowEditModal(false);
+  }}
+/>
  {showReportModal && (
   <AnimatePresence>
     <motion.div
