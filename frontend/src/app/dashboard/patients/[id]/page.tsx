@@ -678,90 +678,125 @@ const handleSendReminder = () => {
         }}
       />
 
-   {showReportModal && (
+ {showReportModal && (
   <AnimatePresence>
     <motion.div
       key="report-backdrop"
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       onClick={() => setShowReportModal(false)}
       style={{
-        position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)",
+        position: "fixed", inset: 0, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(6px)",
         display: "flex", alignItems: "center", justifyContent: "center",
         zIndex: 100, padding: 20,
       }}
     >
       <motion.div
         onClick={(e) => e.stopPropagation()}
-        initial={{ opacity: 0, scale: 0.94, y: 12 }}
+        initial={{ opacity: 0, scale: 0.92, y: 16 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.96, y: 8 }}
-        transition={{ duration: 0.25, ease: EASE }}
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        transition={{ duration: 0.3, ease: EASE }}
         style={{
-          background: "var(--bg-surface)", borderRadius: 20, padding: 0,
-          maxWidth: 460, width: "100%", maxHeight: "82vh", overflow: "hidden",
+          background: "var(--bg-surface)", borderRadius: 22, padding: 0,
+          maxWidth: 480, width: "100%", maxHeight: "86vh", overflow: "hidden",
           border: "1px solid var(--border-subtle)",
-          boxShadow: "0 24px 60px rgba(0,0,0,0.4)",
+          boxShadow: "0 30px 80px rgba(0,0,0,0.5)",
           display: "flex", flexDirection: "column",
         }}
       >
-        {/* Header with gradient accent bar */}
+        {/* ── Header with texture ── */}
         <div style={{
-          padding: "24px 28px 20px",
-          borderBottom: "1px solid var(--border-subtle)",
+          padding: "28px 28px 88px",
+          position: "relative", overflow: "hidden",
           background: "var(--accent-gradient)",
-          position: "relative",
         }}>
+          {/* Subtle dot mesh texture */}
+          <svg width="100%" height="100%" viewBox="0 0 400 160" preserveAspectRatio="none"
+            style={{ position: "absolute", inset: 0, opacity: 0.15 }}>
+            {Array.from({ length: 24 }).map((_, i) => (
+              <circle key={i} cx={(i % 8) * 55 + 20} cy={Math.floor(i / 8) * 55 + 20} r="1.6" fill="#fff" />
+            ))}
+          </svg>
+
           <button onClick={() => setShowReportModal(false)}
             style={{
-              position: "absolute", top: 16, right: 16,
-              background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 8,
-              width: 28, height: 28, cursor: "pointer", color: "#fff", fontSize: 15,
+              position: "absolute", top: 18, right: 18,
+              background: "rgba(255,255,255,0.18)", border: "none", borderRadius: 9,
+              width: 30, height: 30, cursor: "pointer", color: "#fff", fontSize: 15,
               display: "flex", alignItems: "center", justifyContent: "center",
+              backdropFilter: "blur(4px)",
             }}>✕</button>
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.75)", letterSpacing: "0.06em", marginBottom: 6 }}>
-            PATIENT REPORT
-          </div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: "#fff" }}>{patient.full_name}</div>
-          <div style={{ fontSize: 12.5, color: "rgba(255,255,255,0.8)", marginTop: 3 }}>
-            {patient.phone} · Age {patient.age ?? "—"}
-          </div>
+
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.8)", letterSpacing: "0.08em", marginBottom: 8, fontWeight: 600 }}>
+              PATIENT REPORT
+            </div>
+            <div style={{ fontSize: 26, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>{patient.full_name}</div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.85)", marginTop: 4 }}>
+              {patient.phone} · Age {patient.age ?? "—"}
+            </div>
+          </motion.div>
         </div>
 
-        {/* Body */}
-        <div style={{ padding: "22px 28px 28px", overflowY: "auto" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 24, marginBottom: 26 }}>
-            <AdherenceRing value={weekAdherence ?? 0} />
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <div>
-                <span style={{ fontSize: 18, fontWeight: 700, color: "var(--success)" }}>{takenCount}</span>
-                <span style={{ fontSize: 11.5, color: "var(--text-muted)", marginLeft: 6 }}>doses taken (14d)</span>
-              </div>
-              <div>
-                <span style={{ fontSize: 18, fontWeight: 700, color: "var(--danger)" }}>{missedCount}</span>
-                <span style={{ fontSize: 11.5, color: "var(--text-muted)", marginLeft: 6 }}>doses missed (14d)</span>
-              </div>
+        {/* ── Floating adherence card — overlaps header ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, ease: EASE }}
+          style={{
+            margin: "-64px 24px 0", padding: "22px 24px",
+            background: "var(--bg-page)", borderRadius: 16,
+            border: "1px solid var(--border-subtle)",
+            boxShadow: "0 12px 32px rgba(0,0,0,0.25)",
+            display: "flex", alignItems: "center", gap: 22,
+            position: "relative", zIndex: 2,
+          }}
+        >
+          <AdherenceRing value={weekAdherence ?? 0} />
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+              <span style={{ fontSize: 22, fontWeight: 700, color: "var(--success)" }}><CountUp to={takenCount} /></span>
+              <span style={{ fontSize: 11.5, color: "var(--text-muted)" }}>taken · 14d</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+              <span style={{ fontSize: 22, fontWeight: 700, color: "var(--danger)" }}><CountUp to={missedCount} /></span>
+              <span style={{ fontSize: 11.5, color: "var(--text-muted)" }}>missed · 14d</span>
             </div>
           </div>
+        </motion.div>
 
-          <div style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.05em", marginBottom: 10 }}>
+        {/* ── Medicines list ── */}
+        <div style={{ padding: "24px 28px 28px", overflowY: "auto" }}>
+          <div style={{ fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.06em", marginBottom: 14, fontWeight: 600 }}>
             ACTIVE MEDICINES
           </div>
           {realMedicines.length === 0 ? (
             <p style={{ fontSize: 12.5, color: "var(--text-muted)" }}>No active medicines</p>
           ) : (
-            realMedicines.map((m, i) => (
-              <div key={i} style={{
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "10px 0",
-                borderBottom: i < realMedicines.length - 1 ? "1px solid var(--border-subtle)" : "none",
-              }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{ width: 6, height: 6, borderRadius: "50%", background: m.color || "var(--accent-primary)" }} />
-                  <span style={{ fontSize: 13.5, fontWeight: 500, color: "var(--text-primary)" }}>{m.name} {m.dosage}</span>
-                </div>
-                <span style={{ fontSize: 12, color: "var(--text-muted)", fontFamily: "monospace" }}>{m.remaining}/{m.total} left</span>
-              </div>
-            ))
+            realMedicines.map((m, i) => {
+              const pct = m.total > 0 ? Math.round((m.remaining / m.total) * 100) : 0;
+              return (
+                <motion.div key={i}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 + i * 0.06 }}
+                  style={{ marginBottom: 16 }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div style={{ width: 7, height: 7, borderRadius: "50%", background: m.color || "var(--accent-primary)" }} />
+                      <span style={{ fontSize: 13.5, fontWeight: 600, color: "var(--text-primary)" }}>{m.name} {m.dosage}</span>
+                    </div>
+                    <span style={{ fontSize: 11.5, color: "var(--text-muted)", fontFamily: "monospace" }}>{m.remaining}/{m.total}</span>
+                  </div>
+                  <div style={{ height: 3, background: "var(--border-subtle)", borderRadius: 2, overflow: "hidden" }}>
+                    <motion.div
+                      initial={{ width: 0 }} animate={{ width: `${pct}%` }}
+                      transition={{ duration: 0.6, delay: 0.3 + i * 0.06, ease: "easeOut" }}
+                      style={{ height: "100%", background: m.color || "var(--accent-primary)", borderRadius: 2 }}
+                    />
+                  </div>
+                </motion.div>
+              );
+            })
           )}
         </div>
       </motion.div>
