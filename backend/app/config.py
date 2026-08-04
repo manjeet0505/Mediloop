@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     DATABASE_URL: str = ""
     UPSTASH_REDIS_REST_URL: str = ""
     UPSTASH_REDIS_REST_TOKEN: str = ""
+    whatsapp_access_token: str = ""
+    whatsapp_phone_number_id: str = ""
 
     class Config:
         env_file = ".env"

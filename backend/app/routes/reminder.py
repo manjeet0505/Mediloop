@@ -7,7 +7,12 @@ from app.agents.reminder_agent import (
     active_schedules
 )
 from app.models.reminder import ReminderSchedule, DoseConfirmation
-
+from app.database.connection import get_db
+from app.database.models import Patient
+from app.services.dose_service import send_whatsapp_message
+from sqlalchemy import select
+from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 router = APIRouter(prefix="/api/v1/reminder", tags=["Reminder Agent"])
 
 # schedule
@@ -42,12 +47,20 @@ async def get_adherence(patient_id: str):
     return {"success": True, "data": stats}
 
 @router.post("/test-reminder/{patient_id}")
-async def test_reminder(patient_id: str, medicine_name: str, dosage: str):
+async def test_reminder(patient_id: str, medicine_name: str, dosage: str, db: AsyncSession = Depends(get_db)):
     """
-    Trigger a test reminder immediately - for demo purposes
+    Trigger a test reminder immediately - for demo purposes.
+    Fetches the real patient from DB (bypasses in-memory active_schedules).
     """
-    send_dose_reminder(patient_id, medicine_name, dosage)
-    return {"success": True, "message": f"Reminder sent for {medicine_name}"}
+    result = await db.execute(select(Patient).where(Patient.id == patient_id))
+    patient = result.scalar_one_or_none()
+    if not patient:
+        return {"success": False, "message": "Patient not found"}
+
+    msg = f"💊 Medicine Reminder: Time to take {medicine_name} ({dosage}). Reply 1 to confirm."
+    sent = send_whatsapp_message(patient.phone, msg)
+
+    return {"success": sent, "message": f"Reminder {'sent' if sent else 'failed'} for {medicine_name}"}
 
 @router.get("/active-schedules")
 async def get_active_schedules():
