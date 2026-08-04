@@ -8,6 +8,8 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database.models import Patient, DoseEvent
+import os
+import requests
 
 # ── Message templates (console stub for now — swap send_whatsapp_message's
 #    body for the real Meta Business API call later, signature stays same) ──
@@ -25,15 +27,47 @@ MESSAGES = {
 }
 
 
+WHATSAPP_TOKEN = os.getenv("WHATSAPP_ACCESS_TOKEN")
+WHATSAPP_PHONE_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID")
+WHATSAPP_API_URL = f"https://graph.facebook.com/v25.0/{WHATSAPP_PHONE_ID}/messages"
+
 def send_whatsapp_message(phone: str, message: str) -> bool:
-    """Console simulation — replace body with real WhatsApp Business API call later."""
-    print(f"\n{'='*50}")
-    print(f"📱 WHATSAPP → {phone}")
-    print(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"Message: {message}")
-    print(f"{'='*50}\n")
-    # TODO: requests.post(WHATSAPP_API_URL, json={"to": phone, "message": message})
-    return True
+    """Sends a real WhatsApp message via Meta's Business API (test template for now)."""
+    if not WHATSAPP_TOKEN or not WHATSAPP_PHONE_ID:
+        print(f"⚠️  WhatsApp not configured — would have sent to {phone}: {message}")
+        return False
+
+    clean_phone = phone.replace("+", "").replace(" ", "").replace("-", "")
+
+    payload = {
+        "messaging_product": "whatsapp",
+        "to": clean_phone,
+        "type": "template",
+        "template": {
+            "name": "hello_world",
+            "language": { "code": "en_US" }
+        }
+    }
+
+    try:
+        response = requests.post(
+            WHATSAPP_API_URL,
+            headers={
+                "Authorization": f"Bearer {WHATSAPP_TOKEN}",
+                "Content-Type": "application/json"
+            },
+            json=payload,
+            timeout=10
+        )
+        if response.status_code == 200:
+            print(f"📱 WHATSAPP SENT → {phone}")
+            return True
+        else:
+            print(f"❌ WHATSAPP FAILED → {phone}: {response.status_code} {response.text}")
+            return False
+    except Exception as e:
+        print(f"❌ WHATSAPP ERROR → {phone}: {e}")
+        return False
 
 
 async def ensure_todays_doses(patient: Patient, db: AsyncSession) -> list[DoseEvent]:

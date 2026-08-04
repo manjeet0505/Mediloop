@@ -11,7 +11,7 @@ export function DemoSection() {
       <SectionHeader
         tag="Live Demo"
         title="Try It Right Now"
-        desc="Real API calls to your FastAPI backend. No mocking. No fake data."
+        desc="Real API calls to your FastAPI backend. WhatsApp delivery currently runs in console-simulation mode during development."
         tagColor="var(--accent-primary)"
       />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
