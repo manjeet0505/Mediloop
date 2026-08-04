@@ -7,7 +7,7 @@ from app.models.reminder import (
     ReminderSchedule, DoseEvent, DoseStatus, 
     EscalationLevel, EscalationAlert
 )
-
+from app.services.dose_service import send_whatsapp_message as _send_real_whatsapp
 # In-memory store (Redis mein migrate karenge baad mein)
 active_schedules: Dict[str, ReminderSchedule] = {}
 dose_logs: Dict[str, List[DoseEvent]] = {}
@@ -32,23 +32,8 @@ MESSAGES = {
 }
 
 def send_whatsapp_message(phone: str, message: str, patient_id: str = ""):
-    """
-    WhatsApp message sender - Console simulation for now
-    Replace with actual WhatsApp Business API later
-    """
-    print(f"\n{'='*50}")
-    print(f"📱 WHATSAPP MESSAGE")
-    print(f"To: {phone}")
-    print(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"Message: {message}")
-    print(f"{'='*50}\n")
-    
-    # TODO: Replace with real WhatsApp Business API
-    # requests.post(WHATSAPP_API_URL, json={
-    #     "to": phone,
-    #     "message": message
-    # })
-    return True
+    """Delegates to the real Meta WhatsApp API call — see dose_service.py."""
+    return _send_real_whatsapp(phone, message)
 
 def check_and_escalate(patient_id: str):
     """Check missed doses and escalate if needed"""
