@@ -42,17 +42,16 @@ export const prescriptionApi = {
 };
 
 // ─── Reminder Agent ────────────────────────────────────────────────
-export const reminderApi = {
-  schedule: (data: any) =>
-    fetcher<any>("/api/v1/reminder/schedule", { method: "POST", body: JSON.stringify(data) }),
-  confirmDose: (data: any) =>
-    fetcher<any>("/api/v1/reminder/confirm-dose", { method: "POST", body: JSON.stringify(data) }),
-  getAdherence: (patientId: string) =>
-    fetcher<any>(`/api/v1/reminder/adherence/${patientId}`),
-  getActiveSchedules: () =>
-    fetcher<any>("/api/v1/reminder/active-schedules"),
-  testReminder: (patientId: string, medicine: string, dosage: string) =>
-    fetcher<any>(`/api/v1/reminder/test-reminder/${patientId}?medicine_name=${medicine}&dosage=${dosage}`, { method: "POST" }),
+export const patientPortalApi = {
+  me: () => fetcher<any>("/api/v1/patient/me"),
+  medicines: () => fetcher<any>("/api/v1/patient/me/medicines"),
+  confirmDose: (doseId: string) =>
+    fetcher<any>(`/api/v1/patient/me/confirm-dose/${doseId}`, { method: "POST" }),
+  adherence: () => fetcher<any>("/api/v1/patient/me/adherence"),
+  stock: () => fetcher<any>("/api/v1/patient/me/stock"),
+  medicinesList: () => fetcher<any>("/api/v1/patient/me/medicines/list"),
+  medicinesHeatmap: (weeks: number = 12) =>
+    fetcher<any>(`/api/v1/patient/me/medicines/heatmap?weeks=${weeks}`),
 };
 
 // ─── Stock Agent ───────────────────────────────────────────────────
