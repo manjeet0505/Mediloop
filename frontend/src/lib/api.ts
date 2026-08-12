@@ -56,17 +56,14 @@ export const reminderApi = {
 };
 
 // ─── Stock Agent ───────────────────────────────────────────────────
-export const stockApi = {
-  addStock: (data: any) =>
-    fetcher<any>("/api/v1/stock/add", { method: "POST", body: JSON.stringify(data) }),
-  checkStock: (patientId: string) =>
-    fetcher<any>(`/api/v1/stock/check/${patientId}`),
-  updateDoses: (patientId: string, medicine: string, doses: number) =>
-    fetcher<any>(`/api/v1/stock/update-doses?patient_id=${patientId}&medicine_name=${medicine}&doses=${doses}`, { method: "POST" }),
-  reorder: (data: any) =>
-    fetcher<any>("/api/v1/stock/reorder", { method: "POST", body: JSON.stringify(data) }),
-  getSummary: (patientId: string) =>
-    fetcher<any>(`/api/v1/stock/summary/${patientId}`),
+export const clinicApi = {
+  getAllStock: () => fetcher<any>("/api/v1/patients/stock/all"),
+  getPatientMedicines: (patientId: string) =>
+    fetcher<any>(`/api/v1/patients/${patientId}/medicines`),
+  getDoseHistory: (patientId: string, days: number = 14) =>
+    fetcher<any>(`/api/v1/patients/${patientId}/dose-history?days=${days}`),
+  testReminder: (patientId: string, medicine: string, dosage: string) =>
+    fetcher<any>(`/api/v1/reminder/test-reminder/${patientId}?medicine_name=${medicine}&dosage=${dosage}`, { method: "POST" }),
 };
 
 // ─── Future agents — add here ──────────────────────────────────────
