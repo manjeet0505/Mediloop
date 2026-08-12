@@ -42,27 +42,31 @@ export const prescriptionApi = {
 };
 
 // ─── Reminder Agent ────────────────────────────────────────────────
-export const patientPortalApi = {
-  me: () => fetcher<any>("/api/v1/patient/me"),
-  medicines: () => fetcher<any>("/api/v1/patient/me/medicines"),
-  confirmDose: (doseId: string) =>
-    fetcher<any>(`/api/v1/patient/me/confirm-dose/${doseId}`, { method: "POST" }),
-  adherence: () => fetcher<any>("/api/v1/patient/me/adherence"),
-  stock: () => fetcher<any>("/api/v1/patient/me/stock"),
-  medicinesList: () => fetcher<any>("/api/v1/patient/me/medicines/list"),
-  medicinesHeatmap: (weeks: number = 12) =>
-    fetcher<any>(`/api/v1/patient/me/medicines/heatmap?weeks=${weeks}`),
+export const reminderApi = {
+  schedule: (data: any) =>
+    fetcher<any>("/api/v1/reminder/schedule", { method: "POST", body: JSON.stringify(data) }),
+  confirmDose: (data: any) =>
+    fetcher<any>("/api/v1/reminder/confirm-dose", { method: "POST", body: JSON.stringify(data) }),
+  getAdherence: (patientId: string) =>
+    fetcher<any>(`/api/v1/reminder/adherence/${patientId}`),
+  getActiveSchedules: () =>
+    fetcher<any>("/api/v1/reminder/active-schedules"),
+  testReminder: (patientId: string, medicine: string, dosage: string) =>
+    fetcher<any>(`/api/v1/reminder/test-reminder/${patientId}?medicine_name=${medicine}&dosage=${dosage}`, { method: "POST" }),
 };
 
 // ─── Stock Agent ───────────────────────────────────────────────────
-export const clinicApi = {
-  getAllStock: () => fetcher<any>("/api/v1/patients/stock/all"),
-  getPatientMedicines: (patientId: string) =>
-    fetcher<any>(`/api/v1/patients/${patientId}/medicines`),
-  getDoseHistory: (patientId: string, days: number = 14) =>
-    fetcher<any>(`/api/v1/patients/${patientId}/dose-history?days=${days}`),
-  testReminder: (patientId: string, medicine: string, dosage: string) =>
-    fetcher<any>(`/api/v1/reminder/test-reminder/${patientId}?medicine_name=${medicine}&dosage=${dosage}`, { method: "POST" }),
+export const stockApi = {
+  addStock: (data: any) =>
+    fetcher<any>("/api/v1/stock/add", { method: "POST", body: JSON.stringify(data) }),
+  checkStock: (patientId: string) =>
+    fetcher<any>(`/api/v1/stock/check/${patientId}`),
+  updateDoses: (patientId: string, medicine: string, doses: number) =>
+    fetcher<any>(`/api/v1/stock/update-doses?patient_id=${patientId}&medicine_name=${medicine}&doses=${doses}`, { method: "POST" }),
+  reorder: (data: any) =>
+    fetcher<any>("/api/v1/stock/reorder", { method: "POST", body: JSON.stringify(data) }),
+  getSummary: (patientId: string) =>
+    fetcher<any>(`/api/v1/stock/summary/${patientId}`),
 };
 
 // ─── Future agents — add here ──────────────────────────────────────
