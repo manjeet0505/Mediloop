@@ -17,7 +17,7 @@ export function Hero() {
 
   return (
    <section className="min-h-screen flex flex-col justify-center pt-24 pb-16 relative overflow-hidden">
-     {/* Background photo */}
+    {/* Background photo */}
       <div className="absolute inset-0" style={{ zIndex: -1 }}>
         <Image
           src="/images/hero-photo.jpg"
@@ -25,10 +25,14 @@ export function Hero() {
           fill
           priority
           className="object-cover"
-          style={{ opacity: 0.3 }}
+          style={{ opacity: 0.55, filter: "saturate(0.6) contrast(1.1)" }}
         />
         <div className="absolute inset-0" style={{
-          background: "linear-gradient(180deg, var(--bg-page) 5%, transparent 40%, transparent 60%, var(--bg-page) 95%)"
+          background: "linear-gradient(180deg, var(--bg-page) 0%, color-mix(in srgb, var(--bg-page) 55%, transparent) 30%, color-mix(in srgb, var(--bg-page) 40%, transparent) 55%, var(--bg-page) 88%, var(--bg-page) 100%)"
+        }} />
+        <div className="absolute inset-0" style={{
+          background: "radial-gradient(circle at 50% 40%, transparent 0%, var(--bg-page) 90%)",
+          opacity: 0.5,
         }} />
       </div>
        {/* Ambient corner orbs */}
