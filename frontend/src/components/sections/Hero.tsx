@@ -15,6 +15,15 @@ export function Hero() {
 
   return (
     <section className="min-h-screen flex flex-col justify-center pt-24 pb-16">
+       {/* Ambient corner orbs */}
+      <div className="absolute top-20 left-0 w-[400px] h-[400px] pointer-events-none" style={{
+        background: `radial-gradient(circle,var(--orb-secondary) 0%,transparent 70%)`,
+        filter: "blur(60px)", opacity: 0.5,
+      }} />
+      <div className="absolute bottom-0 right-0 w-[400px] h-[400px] pointer-events-none" style={{
+        background: `radial-gradient(circle,var(--orb-tertiary) 0%,transparent 70%)`,
+        filter: "blur(60px)", opacity: 0.5,
+      }} />
 
       {/* Floating badge */}
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
