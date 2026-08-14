@@ -5,7 +5,11 @@ import { AGENTS } from "@/lib/constants";
 
 export function AgentsSection() {
   return (
-    <section id="agents" className="mb-28">
+    <section id="agents" className="mb-28" style={{
+    background: "var(--bg-surface)",
+    borderRadius: 28,
+    padding: "56px 40px",
+  }}>
       <SectionHeader
         tag="Agent Network"
         title="5 Autonomous Agents"
