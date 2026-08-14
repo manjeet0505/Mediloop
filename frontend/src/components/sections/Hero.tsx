@@ -25,14 +25,14 @@ export function Hero() {
           fill
           priority
           className="object-cover"
-         style={{ opacity: 0.95, filter: "saturate(1) contrast(1.05) brightness(1.15)" }}
+         style={{ opacity: 0.75, filter: "saturate(0.9) contrast(1.05) brightness(1)" }}
         />
-        <div className="absolute inset-0" style={{
-          background: "linear-gradient(180deg, var(--bg-page) 0%, color-mix(in srgb, var(--bg-page) 55%, transparent) 30%, color-mix(in srgb, var(--bg-page) 40%, transparent) 55%, var(--bg-page) 88%, var(--bg-page) 100%)"
+         <div className="absolute inset-0" style={{
+          background: "linear-gradient(180deg, color-mix(in srgb, var(--bg-page) 55%, transparent) 0%, color-mix(in srgb, var(--bg-page) 70%, transparent) 22%, color-mix(in srgb, var(--bg-page) 78%, transparent) 45%, color-mix(in srgb, var(--bg-page) 78%, transparent) 65%, color-mix(in srgb, var(--bg-page) 60%, transparent) 85%, var(--bg-page) 100%)"
         }} />
        <div className="absolute inset-0" style={{
-          background: "radial-gradient(ellipse 80% 60% at 50% 40%, transparent 20%, var(--bg-page) 100%)",
-          opacity: 0.35,
+          background: "radial-gradient(ellipse 70% 55% at 50% 42%, var(--bg-page) 0%, transparent 65%)",
+          opacity: 0.55,
         }} />
       </div>
        {/* Ambient corner orbs */}
