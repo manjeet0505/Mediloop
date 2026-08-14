@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { useServerHealth } from "@/hooks/useApi";
 import { MagneticButton } from "@/components/ui/MagneticButton";
+import { Server, Zap, Bot, IndianRupee } from "lucide-react";
 
 export function Hero() {
   const { online } = useServerHealth();
@@ -106,11 +107,11 @@ export function Hero() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { v: online ? "ONLINE" : "OFFLINE", l: "Backend Status", c: online ? "#10b981" : "#ef4444", pulse: true },
-          { v: String(apiCalls), l: "API Calls Today", c: "#6366f1", pulse: true },
-          { v: "3 / 5", l: "Agents Active", c: "#8b5cf6", pulse: false },
-          { v: "INR 0", l: "Infra Cost", c: "#06b6d4", pulse: false },
+       {[
+          { v: online ? "ONLINE" : "OFFLINE", l: "Backend Status", c: online ? "#10b981" : "#ef4444", pulse: true, Icon: Server },
+          { v: String(apiCalls), l: "API Calls Today", c: "#6366f1", pulse: true, Icon: Zap },
+          { v: "3 / 5", l: "Agents Active", c: "#8b5cf6", pulse: false, Icon: Bot },
+          { v: "INR 0", l: "Infra Cost", c: "#06b6d4", pulse: false, Icon: IndianRupee },
         ].map((s, i) => (
           <motion.div key={i}
             initial={{ opacity: 0, y: 30 }}
@@ -121,6 +122,7 @@ export function Hero() {
            style={{ background: "var(--bg-overlay)", border: "1px solid var(--border-subtle)" }}>
             <motion.div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
               style={{ background: `radial-gradient(circle at 50% 50%,${s.c}08 0%,transparent 70%)` }} />
+               <s.Icon size={20} strokeWidth={2} className="mx-auto mb-2.5 relative z-10" style={{ color: s.c, opacity: 0.85 }} />
             {s.pulse && (
               <div className="w-1.5 h-1.5 rounded-full mx-auto mb-2 animate-pulse" style={{ background: s.c }} />
             )}
