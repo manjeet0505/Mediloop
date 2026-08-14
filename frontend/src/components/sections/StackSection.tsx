@@ -5,7 +5,11 @@ import { TECH_STACK } from "@/lib/constants";
 
 export function StackSection() {
   return (
-    <section id="stack" className="mb-28">
+    <section id="stack" className="mb-28"  style={{
+    background: "var(--bg-elevated)",
+    borderRadius: 28,
+    padding: "56px 40px",
+  }}>
       <SectionHeader
         tag="Infrastructure"
         title="Production Stack"
