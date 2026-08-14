@@ -14,7 +14,7 @@ export function Hero() {
   }, []);
 
   return (
-    <section className="min-h-screen flex flex-col justify-center pt-24 pb-16">
+   <section className="min-h-screen flex flex-col justify-center pt-24 pb-16 relative overflow-hidden">
        {/* Ambient corner orbs */}
       <div className="absolute top-20 left-0 w-[400px] h-[400px] pointer-events-none" style={{
         background: `radial-gradient(circle,var(--orb-secondary) 0%,transparent 70%)`,
@@ -105,8 +105,7 @@ export function Hero() {
       </motion.div>
 
       {/* Stats */}
-      <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1 }} className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { v: online ? "ONLINE" : "OFFLINE", l: "Backend Status", c: online ? "#10b981" : "#ef4444", pulse: true },
           { v: String(apiCalls), l: "API Calls Today", c: "#6366f1", pulse: true },
@@ -114,6 +113,9 @@ export function Hero() {
           { v: "INR 0", l: "Infra Cost", c: "#06b6d4", pulse: false },
         ].map((s, i) => (
           <motion.div key={i}
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1 + i * 0.12, type: "spring", stiffness: 200 }}
             whileHover={{ y: -6, boxShadow: `0 20px 60px ${s.c}20` }}
             className="rounded-2xl p-5 text-center relative overflow-hidden group"
            style={{ background: "var(--bg-overlay)", border: "1px solid var(--border-subtle)" }}>
@@ -126,7 +128,7 @@ export function Hero() {
             <div className="text-xs uppercase tracking-wider relative z-10" style={{ color: "var(--text-muted)" }}>{s.l}</div>
           </motion.div>
         ))}
-      </motion.div>
+        </div>
     </section>
   );
 }
