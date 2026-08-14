@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { useServerHealth } from "@/hooks/useApi";
 import { MagneticButton } from "@/components/ui/MagneticButton";
+import Image from "next/image";
 import { Server, Zap, Bot, IndianRupee } from "lucide-react";
 
 export function Hero() {
@@ -16,6 +17,20 @@ export function Hero() {
 
   return (
    <section className="min-h-screen flex flex-col justify-center pt-24 pb-16 relative overflow-hidden">
+     {/* Background photo */}
+      <div className="absolute inset-0" style={{ zIndex: -1 }}>
+        <Image
+          src="/images/hero-photo.jpg"
+          alt=""
+          fill
+          priority
+          className="object-cover"
+          style={{ opacity: 0.3 }}
+        />
+        <div className="absolute inset-0" style={{
+          background: "linear-gradient(180deg, var(--bg-page) 5%, transparent 40%, transparent 60%, var(--bg-page) 95%)"
+        }} />
+      </div>
        {/* Ambient corner orbs */}
       <div className="absolute top-20 left-0 w-[400px] h-[400px] pointer-events-none" style={{
         background: `radial-gradient(circle,var(--orb-secondary) 0%,transparent 70%)`,
