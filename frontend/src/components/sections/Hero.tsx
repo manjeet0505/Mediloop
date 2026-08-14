@@ -138,7 +138,7 @@ export function Hero() {
             transition={{ delay: 1 + i * 0.12, type: "spring", stiffness: 200 }}
             whileHover={{ y: -6, boxShadow: `0 20px 60px ${s.c}20` }}
             className="rounded-2xl p-5 text-center relative overflow-hidden group"
-           style={{ background: "var(--bg-overlay)", border: "1px solid var(--border-subtle)" }}>
+           style={{ background: "color-mix(in srgb, var(--bg-page) 75%, var(--bg-overlay))", border: "1px solid var(--border-subtle)", backdropFilter: "blur(12px)" }}>
             <motion.div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
               style={{ background: `radial-gradient(circle at 50% 50%,${s.c}08 0%,transparent 70%)` }} />
                <s.Icon size={20} strokeWidth={2} className="mx-auto mb-2.5 relative z-10" style={{ color: s.c, opacity: 0.85 }} />
