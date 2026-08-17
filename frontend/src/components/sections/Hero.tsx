@@ -94,8 +94,8 @@ export function Hero() {
             initial={{ opacity: 0, letterSpacing: "0.5em" }}
             animate={{ opacity: 1, letterSpacing: "0.25em" }}
             transition={{ delay: 0.4, duration: 0.8 }}
-            className="font-light uppercase tracking-widest"
-            style={{ fontSize: "clamp(14px,2.5vw,28px)", color: "var(--text-muted)" }}
+           className="font-light uppercase tracking-widest"
+            style={{ fontSize: "clamp(14px,2.5vw,28px)", color: "var(--text-secondary)", textShadow: "0 2px 20px var(--bg-page)" }}
           >
             Autonomous Care AI
           </motion.div>
