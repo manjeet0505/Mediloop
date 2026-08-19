@@ -6,7 +6,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routes.prescription import router as prescription_router
 from app.routes.reminder import router as reminder_router
-# from app.routes.stock import router as stock_router
 from app.routes.auth import router as auth_router
 from app.database.connection import init_db
 from app.services.scheduler import start_scheduler, stop_scheduler
@@ -41,7 +40,6 @@ async def shutdown():
 app.include_router(auth_router)
 app.include_router(prescription_router)
 app.include_router(reminder_router)
-# app.include_router(stock_router)
 app.include_router(patients_router)
 app.include_router(patient_router)
 
