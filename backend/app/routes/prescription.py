@@ -145,6 +145,7 @@ async def confirm_prescription(
             stock.doses_taken = 0
             stock.doses_per_day = times_per_day
             stock.dosage = med.dosage
+            stock.reorder_alert_sent_at = None
         else:
             db.add(StockLevel(
                 id=str(uuid.uuid4()),
