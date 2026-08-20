@@ -76,6 +76,12 @@ def start_scheduler():
         id="check_missed_doses",
         replace_existing=True,
     )
+    scheduler.add_job(
+        job_check_stock,
+        CronTrigger(hour=9, minute=0),
+        id="check_stock_alerts",
+        replace_existing=True,
+    )
     scheduler.start()
     logger.info("[scheduler] Reminder scheduler started — reminders + escalation are now live")
 
