@@ -92,8 +92,19 @@ async def confirm_dose(
     if not dose:
         raise HTTPException(status_code=404, detail="Dose not found")
 
-    dose.status = "taken"
+        dose.status = "taken"
     dose.taken_at = datetime.now(timezone.utc)
+
+    stock_result = await db.execute(
+        select(StockLevel).where(
+            StockLevel.patient_id == patient.id,
+            StockLevel.medicine_name == dose.medicine_name,
+        )
+    )
+    stock = stock_result.scalar_one_or_none()
+    if stock:
+        stock.doses_taken += 1
+
     await db.commit()
     await db.refresh(dose)
 
