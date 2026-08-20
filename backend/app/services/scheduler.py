@@ -21,6 +21,7 @@ from app.services.dose_service import (
     send_due_reminders,
     process_missed_doses_and_escalate,
 )
+from app.services.stock_service import check_and_send_reorder_alerts
 
 logger = logging.getLogger("reminder_scheduler")
 scheduler = AsyncIOScheduler()
@@ -50,6 +51,11 @@ async def job_check_missed():
         if missed:
             logger.info(f"[scheduler] Marked {missed} dose(s) missed, escalation processed")
 
+async def job_check_stock():
+    async with AsyncSessionLocal() as db:
+        sent = await check_and_send_reorder_alerts(db)
+        if sent:
+            logger.info(f"[scheduler] Sent {sent} stock reorder alert(s)")
 
 def start_scheduler():
     scheduler.add_job(
