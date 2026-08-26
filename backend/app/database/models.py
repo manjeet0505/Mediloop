@@ -110,5 +110,6 @@ class StockLevel(Base):
     doses_per_day = Column(Integer, default=1)
     start_date = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    reorder_alert_sent_at = Column(DateTime(timezone=True), nullable=True)
 
     patient = relationship("Patient", back_populates="stock_levels")
