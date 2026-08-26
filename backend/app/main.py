@@ -13,6 +13,7 @@ from app.config import settings
 from app.routes.patients import router as patients_router
 from app.routes.patient import router as patient_router
 from app.routes.stock import router as stock_router
+from app.routes.dashboard import router as dashboard_router
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -44,6 +45,7 @@ app.include_router(reminder_router)
 app.include_router(stock_router)
 app.include_router(patients_router)
 app.include_router(patient_router)
+app.include_router(dashboard_router)
 
 @app.get("/")
 async def root():
