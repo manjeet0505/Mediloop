@@ -211,7 +211,7 @@ async def get_dashboard_summary(
         taken = sum(1 for d in p_doses if d.status == "taken")
         missed = sum(1 for d in p_doses if d.status == "missed")
         counted = taken + missed
-        adherence = round((taken / counted) * 100) if counted > 0 else 100
+        adherence = round((taken / counted) * 100) if counted > 0 else None
 
         taken_events = [d for d in p_doses if d.status == "taken" and d.taken_at]
         last_activity = max((d.taken_at for d in taken_events), default=None)

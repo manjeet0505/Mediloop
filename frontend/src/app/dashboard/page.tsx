@@ -68,7 +68,8 @@ function InlineStat({ label, value, color, index }: { label: string; value: numb
 
 function PatientRow({ p, index }: { p: any; index: number }) {
   const statusColor = p.status === "critical" ? "var(--danger)" : p.status === "warning" ? "var(--warning)" : p.status === "new" ? "var(--accent-primary)" : "var(--success)";
-  const adherenceColor = p.adherence >= 80 ? "var(--success)" : p.adherence >= 60 ? "var(--warning)" : "var(--danger)";
+  const hasAdherence = p.adherence !== null && p.adherence !== undefined;
+const adherenceColor = !hasAdherence ? "var(--text-muted)" : p.adherence >= 80 ? "var(--success)" : p.adherence >= 60 ? "var(--warning)" : "var(--danger)";
   const isLive = p.status === "active" || p.status === "new";
 
   return (
