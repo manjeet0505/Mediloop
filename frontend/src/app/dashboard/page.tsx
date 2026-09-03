@@ -197,26 +197,38 @@ const [modalOpen, setModalOpen] = useState(false);
   const greet = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const doctorName = user?.full_name?.split(" ")[0] ?? "";
 
-  const ALERTS = [
-    { title: "Stock Critical", sub: "Metformin · 2 days left", color: "var(--danger)", icon: "ti-package" },
-    { title: "3 Missed Doses", sub: "Family escalation triggered", color: "var(--warning)", icon: "ti-bell-off" },
-    { title: "Follow-up Due", sub: "Appointment in 3 days", color: "var(--accent-primary)", icon: "ti-calendar" },
-  ];
+ const ALERTS = alerts.map(a => ({
+  title: a.type === "stock_critical" ? `${a.patient_name} — Stock` : `${a.patient_name} — Missed Doses`,
+  sub: a.title,
+  color: a.severity === "critical" ? "var(--danger)" : "var(--warning)",
+  icon: a.type === "stock_critical" ? "ti-package" : "ti-bell-off",
+}));
 
-  const AGENTS = [
-    { name: "Prescription AI", status: "live" as const, metric: "142", metricLabel: "parses today", color: "#6366f1" },
-    { name: "Reminder Agent", status: "live" as const, metric: "48", metricLabel: "sent today", color: "#06b6d4" },
-    { name: "Stock Monitor", status: "live" as const, metric: "3", metricLabel: "alerts active", color: "#10b981" },
-    { name: "Health Monitor", status: "building" as const, metric: "—", metricLabel: "coming soon", color: "#f59e0b" },
-    { name: "Follow-up AI", status: "building" as const, metric: "—", metricLabel: "coming soon", color: "#ec4899" },
-  ];
+const AGENTS = [
+  { name: "Prescription AI", status: "live" as const, metric: String(agentMetrics.prescriptions_parsed_today), metricLabel: "parses today", color: "#6366f1" },
+  { name: "Reminder Agent", status: "live" as const, metric: String(agentMetrics.reminders_sent_today), metricLabel: "sent today", color: "#06b6d4" },
+  { name: "Stock Monitor", status: "live" as const, metric: String(agentMetrics.active_stock_alerts), metricLabel: "alerts active", color: "#10b981" },
+  { name: "Health Monitor", status: "building" as const, metric: "—", metricLabel: "coming soon", color: "#f59e0b" },
+  { name: "Follow-up AI", status: "building" as const, metric: "—", metricLabel: "coming soon", color: "#ec4899" },
+];
 
-  const patientRows = patients.map((p, i) => ({
-    ...p,
-    adherence: [94, 72, 45, 88, 91, 67][i % 6],
-    status: ["active", "warning", "critical", "new", "active", "warning"][i % 6],
-    lastSeen: ["2m ago", "1h ago", "3h ago", "Just now", "30m ago", "2h ago"][i % 6],
-  }));
+function timeAgo(iso: string | null): string {
+  if (!iso) return "No activity yet";
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+const patientRows = patients.map(p => ({
+  ...p,
+  adherence: p.adherence_7d,
+  status: p.status,
+  lastSeen: timeAgo(p.last_activity),
+}));
 
   const avgAdherence = patientRows.length
     ? Math.round(patientRows.reduce((s, p) => s + p.adherence, 0) / patientRows.length)
