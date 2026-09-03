@@ -159,10 +159,16 @@ function AgentRow({ name, status, metric, metricLabel, color, index }: {
 
 export default function DashboardPage() {
   const [patients, setPatients] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [user, setUser] = useState<any>(null);
-  const [modalOpen, setModalOpen] = useState(false);
+const [alerts, setAlerts] = useState<any[]>([]);
+const [agentMetrics, setAgentMetrics] = useState({
+  prescriptions_parsed_today: 0,
+  reminders_sent_today: 0,
+  active_stock_alerts: 0,
+});
+const [loading, setLoading] = useState(true);
+const [error, setError] = useState("");
+const [user, setUser] = useState<any>(null);
+const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     setUser(authService.getUser());
