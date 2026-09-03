@@ -106,16 +106,16 @@ const adherenceColor = !hasAdherence ? "var(--text-muted)" : p.adherence >= 80 ?
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 8, width: 90 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, width: 90 }}>
           <div style={{ flex: 1, height: 3, background: "var(--border-subtle)", borderRadius: 2, overflow: "hidden" }}>
             <motion.div
-              initial={{ width: 0 }} animate={{ width: `${p.adherence}%` }}
+              initial={{ width: 0 }} animate={{ width: `${hasAdherence ? p.adherence : 0}%` }}
               transition={{ duration: 0.8, delay: 0.4 + index * 0.05, ease: EASE }}
               style={{ height: "100%", background: adherenceColor, borderRadius: 2 }}
             />
           </div>
           <span style={{ fontSize: 11.5, fontWeight: 600, color: adherenceColor, width: 28, textAlign: "right", fontFamily: "monospace" }}>
-            {p.adherence}%
+            {hasAdherence ? `${p.adherence}%` : "—"}
           </span>
         </div>
 
@@ -231,9 +231,10 @@ const patientRows = patients.map(p => ({
   lastSeen: timeAgo(p.last_activity),
 }));
 
-  const avgAdherence = patientRows.length
-    ? Math.round(patientRows.reduce((s, p) => s + p.adherence, 0) / patientRows.length)
-    : 87;
+  const patientsWithData = patientRows.filter(p => p.adherence !== null && p.adherence !== undefined);
+const avgAdherence = patientsWithData.length
+  ? Math.round(patientsWithData.reduce((s, p) => s + p.adherence, 0) / patientsWithData.length)
+  : 0;
   const liveAgents = AGENTS.filter(a => a.status === "live").length;
 
   return (

@@ -17,19 +17,6 @@ const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 const TABS = ["Overview", "Medicines", "Dose History", "Stock", "Prescriptions"];
 
-// const MEDICINES = [
-//   { name: "Metformin", dosage: "500mg", frequency: "Twice daily", duration: "30 days", times: 2, color: "#6366f1" },
-//   { name: "Amlodipine", dosage: "5mg", frequency: "Once daily", duration: "60 days", times: 1, color: "#06b6d4" },
-//   { name: "Vitamin D3", dosage: "60000IU", frequency: "Once weekly", duration: "8 weeks", times: 1, color: "#10b981" },
-// ];
-
-// const VITALS = [
-//   { label: "Blood Pressure", value: "128/82", unit: "mmHg", status: "normal", icon: "ti-heart-rate-monitor" },
-//   { label: "Blood Sugar", value: "142", unit: "mg/dL", status: "warning", icon: "ti-droplet" },
-//   { label: "Weight", value: "72", unit: "kg", status: "normal", icon: "ti-scale" },
-//   { label: "SpO2", value: "98", unit: "%", status: "normal", icon: "ti-lungs" },
-// ];
-
 function StatusDot({ status }: { status: string }) {
   const color = status === "normal" ? "var(--success)" : status === "warning" ? "var(--warning)" : "var(--danger)";
   const label = status === "normal" ? "normal" : status === "warning" ? "watch" : "critical";
@@ -41,11 +28,12 @@ function StatusDot({ status }: { status: string }) {
   );
 }
 
-function AdherenceRing({ value }: { value: number }) {
+function AdherenceRing({ value }: { value: number | null }) {
+  const hasValue = value !== null && value !== undefined;
   const r = 50;
   const circumference = 2 * Math.PI * r;
-  const offset = circumference - (value / 100) * circumference;
-  const color = value >= 80 ? "var(--success)" : value >= 60 ? "var(--warning)" : "var(--danger)";
+  const offset = hasValue ? circumference - (value / 100) * circumference : circumference;
+  const color = !hasValue ? "var(--text-muted)" : value >= 80 ? "var(--success)" : value >= 60 ? "var(--warning)" : "var(--danger)";
 
   return (
     <div style={{ position: "relative", width: 118, height: 118 }}>
@@ -63,7 +51,9 @@ function AdherenceRing({ value }: { value: number }) {
         position: "absolute", inset: 0, display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "center",
       }}>
-        <span style={{ fontSize: 24, fontWeight: 700, color: "var(--text-primary)" }}><CountUp to={value} />%</span>
+        <span style={{ fontSize: 24, fontWeight: 700, color: "var(--text-primary)" }}>
+          {hasValue ? <><CountUp to={value} />%</> : "—"}
+        </span>
         <span style={{ fontSize: 9.5, color: "var(--text-muted)", marginTop: 2 }}>adherence</span>
       </div>
     </div>
@@ -351,7 +341,7 @@ const handleSendReminder = () => {
     Adherence Score
   </div>
   <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}>
-    <AdherenceRing value={weekAdherence ?? 0} />
+     <AdherenceRing value={weekAdherence} />
   </div>
   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
     {[
@@ -760,7 +750,7 @@ const handleSendReminder = () => {
             position: "relative", zIndex: 2,
           }}
         >
-          <AdherenceRing value={weekAdherence ?? 0} />
+                <AdherenceRing value={weekAdherence} />
           <div style={{ display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
               <span style={{ fontSize: 22, fontWeight: 700, color: "var(--success)" }}><CountUp to={takenCount} /></span>

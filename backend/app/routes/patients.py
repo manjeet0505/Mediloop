@@ -377,7 +377,7 @@ async def get_patient_dose_history(
     taken = sum(1 for d in week_doses if d.status == "taken")
     missed = sum(1 for d in week_doses if d.status == "missed")
     counted = taken + missed
-    week_adherence = round((taken / counted) * 100) if counted > 0 else 100
+    week_adherence = round((taken / counted) * 100) if counted > 0 else None
 
     return {"week_adherence": week_adherence, "history": history}
 
