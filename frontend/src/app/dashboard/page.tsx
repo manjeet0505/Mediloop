@@ -291,7 +291,7 @@ const patientRows = patients.map(p => ({
       >
         <InlineStat index={0} label="active cases" value={loading ? 0 : active} color="var(--success)" />
         <InlineStat index={1} label="critical alerts" value={ALERTS.length} color="var(--danger)" />
-        <InlineStat index={2} label="reminders today" value={48} color="var(--warning)" />
+       <InlineStat index={2} label="reminders today" value={agentMetrics.reminders_sent_today} color="var(--warning)" />
         <InlineStat index={3} label="agents live" value={liveAgents} color="var(--accent-primary)" />
       </motion.div>
 
