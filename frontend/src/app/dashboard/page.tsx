@@ -171,17 +171,25 @@ const [user, setUser] = useState<any>(null);
 const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
-    setUser(authService.getUser());
-    const timer = setTimeout(() => {
-      const token = authService.getToken();
-      if (!token) { window.location.href = "/login"; return; }
-      fetchWithAuth(`${API}/api/v1/patients/`, token)
-        .then(data => setPatients(Array.isArray(data) ? data : []))
-        .catch(() => setError("Could not load patients — check if backend is running"))
-        .finally(() => setLoading(false));
-    }, 100);
-    return () => clearTimeout(timer);
-  }, []);
+  setUser(authService.getUser());
+  const timer = setTimeout(() => {
+    const token = authService.getToken();
+    if (!token) { window.location.href = "/login"; return; }
+    fetchWithAuth(`${API}/api/v1/patients/dashboard-summary`, token)
+      .then(data => {
+        setPatients(Array.isArray(data.patients) ? data.patients : []);
+        setAlerts(Array.isArray(data.alerts) ? data.alerts : []);
+        setAgentMetrics(data.agent_metrics ?? {
+          prescriptions_parsed_today: 0,
+          reminders_sent_today: 0,
+          active_stock_alerts: 0,
+        });
+      })
+      .catch(() => setError("Could not load dashboard — check if backend is running"))
+      .finally(() => setLoading(false));
+  }, 100);
+  return () => clearTimeout(timer);
+}, []);
 
   const total = patients.length;
   const active = patients.filter(p => p.is_active).length;
