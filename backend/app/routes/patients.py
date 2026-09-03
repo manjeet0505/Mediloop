@@ -299,3 +299,134 @@ async def regenerate_invite_code(
     await db.commit()
     await db.refresh(patient)
     return PatientResponse.model_validate(patient)
+
+@router.get("/dashboard-summary")
+async def get_dashboard_summary(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Single call for the clinic dashboard: patient list with real adherence,
+    live alerts (stock + missed doses), and today's agent activity counts.
+    Everything here is computed from real DB rows — nothing hardcoded.
+    """
+    if current_user.role != "clinic":
+        raise HTTPException(status_code=403, detail="Clinic access only")
+
+    result = await db.execute(
+        select(Patient).where(Patient.clinic_id == current_user.id, Patient.is_active == True)
+    )
+    patients = result.scalars().all()
+
+    if not patients:
+        return {
+            "patients": [],
+            "alerts": [],
+            "agent_metrics": {
+                "prescriptions_parsed_today": 0,
+                "reminders_sent_today": 0,
+                "active_stock_alerts": 0,
+            },
+        }
+
+    patient_ids = [p.id for p in patients]
+    now = datetime.now(timezone.utc)
+    week_start = now - timedelta(days=7)
+    today_start = datetime.combine(date.today(), datetime.min.time(), tzinfo=timezone.utc)
+
+    # 7-day dose history for every patient in one query
+    result = await db.execute(
+        select(DoseEvent).where(
+            DoseEvent.patient_id.in_(patient_ids),
+            DoseEvent.scheduled_time >= week_start,
+        )
+    )
+    doses = result.scalars().all()
+
+    by_patient: dict = {}
+    for d in doses:
+        by_patient.setdefault(d.patient_id, []).append(d)
+
+    # Stock levels for every patient in one query
+    result = await db.execute(select(StockLevel).where(StockLevel.patient_id.in_(patient_ids)))
+    stocks = result.scalars().all()
+    stock_by_patient: dict = {}
+    for s in stocks:
+        stock_by_patient.setdefault(s.patient_id, []).append(s)
+
+    patient_rows = []
+    alerts = []
+    reminders_sent_today = 0
+
+    for p in patients:
+        p_doses = by_patient.get(p.id, [])
+        taken = sum(1 for d in p_doses if d.status == "taken")
+        missed = sum(1 for d in p_doses if d.status == "missed")
+        counted = taken + missed
+        adherence = round((taken / counted) * 100) if counted > 0 else 100
+
+        taken_events = [d for d in p_doses if d.status == "taken" and d.taken_at]
+        last_activity = max((d.taken_at for d in taken_events), default=None)
+
+        reminders_sent_today += sum(
+            1 for d in p_doses
+            if d.reminder_sent_at and d.reminder_sent_at >= today_start
+        )
+
+        is_new = p.created_at and p.created_at >= week_start
+        if p.escalation_level == "emergency":
+            status = "critical"
+        elif p.escalation_level == "family":
+            status = "warning"
+        elif is_new:
+            status = "new"
+        else:
+            status = "active"
+
+        patient_rows.append({
+            "id": p.id,
+            "full_name": p.full_name,
+            "age": p.age,
+            "adherence_7d": adherence,
+            "status": status,
+            "last_activity": last_activity.isoformat() if last_activity else None,
+        })
+
+        if p.escalation_level in ("family", "emergency"):
+            alerts.append({
+                "type": "missed_doses",
+                "title": f"{missed} missed dose(s)",
+                "patient_name": p.full_name,
+                "severity": "critical" if p.escalation_level == "emergency" else "warning",
+            })
+
+        for s in stock_by_patient.get(p.id, []):
+            remaining = max(s.total_quantity - s.doses_taken, 0)
+            days_left = remaining // s.doses_per_day if s.doses_per_day > 0 else remaining
+            if days_left <= 7:
+                alerts.append({
+                    "type": "stock_critical",
+                    "title": f"{s.medicine_name} · {days_left} day(s) left",
+                    "patient_name": p.full_name,
+                    "severity": "critical" if days_left <= 3 else "warning",
+                })
+
+    result = await db.execute(
+        select(Prescription).where(
+            Prescription.patient_id.in_(patient_ids),
+            Prescription.created_at >= today_start,
+        )
+    )
+    prescriptions_today = len(result.scalars().all())
+
+    active_stock_alerts = sum(1 for a in alerts if a["type"] == "stock_critical")
+
+    return {
+        "patients": patient_rows,
+        "alerts": alerts,
+        "agent_metrics": {
+            "prescriptions_parsed_today": prescriptions_today,
+            "reminders_sent_today": reminders_sent_today,
+            "active_stock_alerts": active_stock_alerts,
+        },
+    }
