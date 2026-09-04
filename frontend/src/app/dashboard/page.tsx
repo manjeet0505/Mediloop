@@ -410,11 +410,11 @@ const avgAdherence = patientsWithData.length
             style={{ background: "var(--bg-surface)", border: "1px solid var(--border-subtle)", borderRadius: 14, padding: "13px 16px" }}
           >
             <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", marginBottom: 4 }}>System Status</div>
-            {[
-              { label: "FastAPI Backend", ok: true },
-              { label: "Neon PostgreSQL", ok: true },
-              { label: "Reminder Scheduler", ok: true },
-              { label: "WhatsApp API", ok: false },
+                       {[
+              { label: "FastAPI Backend", ok: systemStatus.backend },
+              { label: "Neon PostgreSQL", ok: systemStatus.database },
+              { label: "Reminder Scheduler", ok: systemStatus.scheduler },
+              { label: "WhatsApp API", ok: systemStatus.whatsapp },
             ].map((s, i) => (
               <div key={i} style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
