@@ -166,6 +166,9 @@ const [agentMetrics, setAgentMetrics] = useState({
   reminders_sent_today: 0,
   active_stock_alerts: 0,
 });
+const [systemStatus, setSystemStatus] = useState({
+  backend: true, database: false, scheduler: false, whatsapp: false,
+});
 const [loading, setLoading] = useState(true);
 const [error, setError] = useState("");
 const [user, setUser] = useState<any>(null);
@@ -176,7 +179,7 @@ const [modalOpen, setModalOpen] = useState(false);
   const timer = setTimeout(() => {
     const token = authService.getToken();
     if (!token) { window.location.href = "/login"; return; }
-    fetchWithAuth(`${API}/api/v1/patients/dashboard-summary`, token)
+       fetchWithAuth(`${API}/api/v1/patients/dashboard-summary`, token)
       .then(data => {
         setPatients(Array.isArray(data.patients) ? data.patients : []);
         setAlerts(Array.isArray(data.alerts) ? data.alerts : []);
@@ -188,6 +191,10 @@ const [modalOpen, setModalOpen] = useState(false);
       })
       .catch(() => setError("Could not load dashboard — check if backend is running"))
       .finally(() => setLoading(false));
+
+    fetchWithAuth(`${API}/api/v1/system/status`, token)
+      .then(data => setSystemStatus(data))
+      .catch(() => setSystemStatus({ backend: false, database: false, scheduler: false, whatsapp: false }));
   }, 100);
   return () => clearTimeout(timer);
 }, []);
