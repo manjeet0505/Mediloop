@@ -15,9 +15,9 @@ const LIVE_LOGS = [
 ];
 
 const STATS = [
-  { v: "300M+", l: "Patients Served", c: "#6366f1" },
-  { v: "94%", l: "Adherence Rate", c: "#10b981" },
+  { v: "300M+", l: "Patients Need This", c: "#6366f1" },
   { v: "5", l: "AI Agents", c: "#8b5cf6" },
+  { v: "24/7", l: "Autonomous Care", c: "#10b981" },
   { v: "₹0", l: "Infra Cost", c: "#06b6d4" },
 ];
 
