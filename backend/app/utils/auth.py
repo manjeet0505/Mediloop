@@ -8,9 +8,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.database.connection import get_db
 from app.database.models import User
+from app.config import settings
 
-SECRET_KEY = "medloop_ai_super_secret_key_2026_manjeet"
+SECRET_KEY = settings.JWT_SECRET_KEY
 ALGORITHM = "HS256"
+
+if not SECRET_KEY:
+    raise RuntimeError("JWT_SECRET_KEY is not set in environment — refusing to start with an insecure default")
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
