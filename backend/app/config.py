@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     UPSTASH_REDIS_REST_TOKEN: str = ""
     whatsapp_access_token: str = ""
     whatsapp_phone_number_id: str = ""
+    JWT_SECRET_KEY: str = ""
 
     class Config:
         env_file = ".env"
