@@ -4,7 +4,10 @@ from sqlalchemy import select
 from app.database.connection import get_db
 from app.database.models import User, Patient
 from app.database.schemas import UserCreate, UserLogin, UserResponse, Token
-from app.utils.auth import hash_password, verify_password, create_access_token, get_current_user
+from app.utils.auth import hash_password, verify_password, create_access_token, get_current_user, decode_token, security
+from app.database.models import BlockedToken
+from fastapi.security import HTTPAuthorizationCredentials
+from datetime import timezone
 from app.utils.validators import validate_email, validate_password, validate_phone, validate_name
 import uuid
 from datetime import datetime, timedelta
