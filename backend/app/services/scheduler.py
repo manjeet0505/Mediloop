@@ -60,9 +60,13 @@ async def job_check_stock():
             logger.info(f"[scheduler] Sent {sent} stock reorder alert(s)")
 
 
+
 async def job_cleanup_expired_tokens():
+    from datetime import datetime, timezone
     async with AsyncSessionLocal() as db:
-        now = datetime.now(timezone.utc) if False else None  # placeholder removed below
+        now = datetime.now(timezone.utc)
+        await db.execute(delete(BlockedToken).where(BlockedToken.expires_at < now))
+        await db.commit()
 
 def start_scheduler():
     scheduler.add_job(
