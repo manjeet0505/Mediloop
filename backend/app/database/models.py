@@ -113,3 +113,10 @@ class StockLevel(Base):
     reorder_alert_sent_at = Column(DateTime(timezone=True), nullable=True)
 
     patient = relationship("Patient", back_populates="stock_levels")
+
+# ── Blocked Tokens (logout revocation) ────────────────────────────
+class BlockedToken(Base):
+    __tablename__ = "blocked_tokens"
+
+    jti = Column(String, primary_key=True)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
