@@ -48,8 +48,14 @@ async def get_current_user(
 ) -> User:
     payload = decode_token(credentials.credentials)
     user_id = payload.get("sub")
-    if not user_id:
+    jti = payload.get("jti")
+    if not user_id or not jti:
         raise HTTPException(status_code=401, detail="Invalid token")
+
+    result = await db.execute(select(BlockedToken).where(BlockedToken.jti == jti))
+    if result.scalar_one_or_none():
+        raise HTTPException(status_code=401, detail="Token has been revoked")
+
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if not user:
