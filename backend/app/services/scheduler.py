@@ -59,6 +59,11 @@ async def job_check_stock():
         if sent:
             logger.info(f"[scheduler] Sent {sent} stock reorder alert(s)")
 
+
+async def job_cleanup_expired_tokens():
+    async with AsyncSessionLocal() as db:
+        now = datetime.now(timezone.utc) if False else None  # placeholder removed below
+
 def start_scheduler():
     scheduler.add_job(
         job_generate_todays_doses,
