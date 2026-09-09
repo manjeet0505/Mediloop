@@ -108,5 +108,18 @@ async def get_me(current_user: User = Depends(get_current_user)):
     return UserResponse.model_validate(current_user)
 
 @router.post("/logout")
-async def logout():
+async def logout(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    payload = decode_token(credentials.credentials)
+    jti = payload.get("jti")
+    exp = payload.get("exp")
+    if jti and exp:
+        db.add(BlockedToken(
+            jti=jti,
+            expires_at=datetime.fromtimestamp(exp, tz=timezone.utc),
+        ))
+        await db.commit()
     return {"message": "Logged out successfully"}
