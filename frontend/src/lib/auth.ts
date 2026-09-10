@@ -29,8 +29,20 @@ export const authService = {
     return !!localStorage.getItem(TOKEN_KEY);
   },
 
-  // Logout
-  logout: () => {
+   // Logout
+  logout: async () => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    if (token) {
+      try {
+        await fetch(`${API}/api/v1/auth/logout`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } catch {
+        // even if the backend call fails (offline, etc.), still clear local session
+      }
+    }
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     window.location.href = "/login";
