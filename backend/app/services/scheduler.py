@@ -93,6 +93,12 @@ def start_scheduler():
         id="check_stock_alerts",
         replace_existing=True,
     )
+    scheduler.add_job(
+        job_cleanup_expired_tokens,
+        CronTrigger(hour=3, minute=0),
+        id="cleanup_expired_tokens",
+        replace_existing=True,
+    )
     scheduler.start()
     logger.info("[scheduler] Reminder scheduler started — reminders + escalation are now live")
 
