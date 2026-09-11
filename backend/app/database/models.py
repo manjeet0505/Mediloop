@@ -132,3 +132,21 @@ class BlockedToken(Base):
 
     jti = Column(String, primary_key=True)
     expires_at = Column(DateTime(timezone=True), nullable=False)
+
+
+# ── Vital Readings ─────────────────────────────────────────────────
+class VitalReading(Base):
+    __tablename__ = "vital_readings"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    patient_id = Column(String, ForeignKey("patients.id"), nullable=False)
+    vital_type = Column(String, nullable=False)       # "bp" | "blood_sugar" | "weight" | "spo2" | "heart_rate"
+    value_1 = Column(Float, nullable=False)            # systolic for bp, value for others
+    value_2 = Column(Float, nullable=True)              # diastolic for bp only, else null
+    unit = Column(String, nullable=False)               # "mmHg" | "mg/dL" | "kg" | "%" | "bpm"
+    recorded_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    source = Column(String, default="manual")
+    status = Column(String, nullable=False)             # "normal" | "watch" | "critical"
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    patient = relationship("Patient", back_populates="vital_readings")
