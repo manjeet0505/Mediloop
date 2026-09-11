@@ -14,6 +14,18 @@ class DoseStatusEnum(str, enum.Enum):
     taken = "taken"
     missed = "missed"
 
+class VitalTypeEnum(str, enum.Enum):
+    bp = "bp"
+    blood_sugar = "blood_sugar"
+    weight = "weight"
+    spo2 = "spo2"
+    heart_rate = "heart_rate"
+
+class VitalStatusEnum(str, enum.Enum):
+    normal = "normal"
+    watch = "watch"
+    critical = "critical"
+
 class EscalationLevelEnum(str, enum.Enum):
     normal = "normal"
     family = "family"
