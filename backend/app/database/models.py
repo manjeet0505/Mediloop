@@ -76,6 +76,7 @@ class Patient(Base):
     prescriptions = relationship("Prescription", back_populates="patient")
     dose_events = relationship("DoseEvent", back_populates="patient")
     stock_levels = relationship("StockLevel", back_populates="patient")
+    vital_readings = relationship("VitalReading", back_populates="patient")  
 
 # ── Prescriptions ──────────────────────────────────────────────────
 class Prescription(Base):
