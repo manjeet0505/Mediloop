@@ -4,6 +4,7 @@ from sqlalchemy import select
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
+from app.services.dose_service import send_vital_alert
 from app.database.connection import get_db
 from app.database.models import User, Patient, VitalReading
 from app.utils.auth import get_current_user
@@ -53,7 +54,12 @@ async def log_vital(
     await db.commit()
     await db.refresh(reading)
 
-    # TODO: if status == "critical" -> trigger send_vital_alert() (next step)
+    db.add(reading)
+    await db.commit()
+    await db.refresh(reading)
+
+    if status == "critical":
+        send_vital_alert(patient, vital_type, value_1, value_2, VITAL_UNITS[vital_type])
 
     return {
         "id": reading.id,
