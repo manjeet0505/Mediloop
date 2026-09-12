@@ -18,11 +18,15 @@ MESSAGES = {
         "reminder": "💊 Medicine Reminder: Time to take {medicine} ({dosage}). Reply 1 to confirm.",
         "family_alert": "🚨 Family Alert: {patient} has missed {count} doses recently. Please check on them.",
         "doctor_alert": "🏥 Doctor Alert: Patient {patient} has missed {count} doses. Immediate attention needed.",
+        "vital_critical": "🚨 Critical Vital Alert: {patient}'s {vital_label} reading is {value} — this is outside the safe range. Please seek medical attention.",
+        "vital_critical_doctor": "🏥 Critical Vital Alert: Patient {patient} recorded a critical {vital_label} reading of {value}. Immediate review needed.",
     },
     "hi": {
         "reminder": "💊 दवाई याद दिलाना: {medicine} ({dosage}) लेने का समय हो गया है। पुष्टि के लिए 1 दबाएं।",
         "family_alert": "🚨 परिवार अलर्ट: {patient} ने हाल ही में {count} बार दवाई नहीं ली। कृपया जांच करें।",
         "doctor_alert": "🏥 डॉक्टर अलर्ट: मरीज {patient} ने {count} बार दवाई नहीं ली। तत्काल ध्यान चाहिए।",
+        "vital_critical": "🚨 गंभीर स्वास्थ्य अलर्ट: {patient} की {vital_label} रीडिंग {value} है — यह सुरक्षित सीमा से बाहर है। कृपया तुरंत डॉक्टर से संपर्क करें।",
+        "vital_critical_doctor": "🏥 गंभीर स्वास्थ्य अलर्ट: मरीज {patient} की {vital_label} रीडिंग {value} गंभीर स्तर पर है। तुरंत ध्यान चाहिए।",
     }
 }
 
@@ -234,3 +238,38 @@ async def process_missed_doses_and_escalate(db: AsyncSession) -> int:
 
     await db.commit()
     return len(overdue)
+
+VITAL_LABELS = {
+    "bp": "Blood Pressure",
+    "blood_sugar": "Blood Sugar",
+    "weight": "Weight",
+    "spo2": "SpO2",
+    "heart_rate": "Heart Rate",
+}
+
+
+def send_vital_alert(patient: Patient, vital_type: str, value_1: float, value_2: float | None, unit: str) -> None:
+    """
+    Sends an immediate WhatsApp alert to the patient (and doctor, if on file)
+    for a critical vital reading. Fire-and-forget — caller already saved the
+    VitalReading row, this just notifies.
+    """
+    lang = patient.language or "en"
+    templates = MESSAGES.get(lang, MESSAGES["en"])
+    vital_label = VITAL_LABELS.get(vital_type, vital_type)
+
+    if vital_type == "bp" and value_2 is not None:
+        value_str = f"{value_1}/{value_2} {unit}"
+    else:
+        value_str = f"{value_1} {unit}"
+
+    patient_msg = templates["vital_critical"].format(
+        patient=patient.full_name, vital_label=vital_label, value=value_str
+    )
+    send_whatsapp_message(patient.phone, patient_msg)
+
+    if patient.doctor_phone:
+        doctor_msg = templates["vital_critical_doctor"].format(
+            patient=patient.full_name, vital_label=vital_label, value=value_str
+        )
+        send_whatsapp_message(patient.doctor_phone, doctor_msg)
