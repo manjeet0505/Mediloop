@@ -9,7 +9,8 @@ from app.database.connection import get_db
 from app.database.models import User, Patient, VitalReading
 from app.utils.auth import get_current_user
 from app.services.clinical_thresholds import evaluate_vital
-from app.routes.patient import get_linked_patient  # reuse existing helper
+from app.routes.patient import get_linked_patient 
+from app.services.trend_service import check_and_alert_trend
 
 router = APIRouter(prefix="/api/v1", tags=["vitals"])
 
@@ -60,6 +61,8 @@ async def log_vital(
 
     if status == "critical":
         send_vital_alert(patient, vital_type, value_1, value_2, VITAL_UNITS[vital_type])
+
+    await check_and_alert_trend(patient, vital_type, db)
 
     return {
         "id": reading.id,
