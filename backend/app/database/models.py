@@ -149,5 +149,5 @@ class VitalReading(Base):
     source = Column(String, default="manual")
     status = Column(String, nullable=False)             # "normal" | "watch" | "critical"
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-
+    trend_alert_sent = Column(Boolean, default=False, nullable=False)
     patient = relationship("Patient", back_populates="vital_readings")
