@@ -20,6 +20,7 @@ MESSAGES = {
         "doctor_alert": "🏥 Doctor Alert: Patient {patient} has missed {count} doses. Immediate attention needed.",
         "vital_critical": "🚨 Critical Vital Alert: {patient}'s {vital_label} reading is {value} — this is outside the safe range. Please seek medical attention.",
         "vital_critical_doctor": "🏥 Critical Vital Alert: Patient {patient} recorded a critical {vital_label} reading of {value}. Immediate review needed.",
+        "trend_rising": "📈 Trend Alert: {patient}'s {vital_label} has been consistently rising over the last 5 readings. Please monitor closely and consult your doctor if it continues.",
     },
     "hi": {
         "reminder": "💊 दवाई याद दिलाना: {medicine} ({dosage}) लेने का समय हो गया है। पुष्टि के लिए 1 दबाएं।",
