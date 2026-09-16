@@ -21,6 +21,7 @@ MESSAGES = {
         "vital_critical": "🚨 Critical Vital Alert: {patient}'s {vital_label} reading is {value} — this is outside the safe range. Please seek medical attention.",
         "vital_critical_doctor": "🏥 Critical Vital Alert: Patient {patient} recorded a critical {vital_label} reading of {value}. Immediate review needed.",
         "trend_rising": "📈 Trend Alert: {patient}'s {vital_label} has been consistently rising over the last 5 readings. Please monitor closely and consult your doctor if it continues.",
+         "weekly_report": "📄 Your weekly health report is ready: {link}",
     },
     "hi": {
         "reminder": "💊 दवाई याद दिलाना: {medicine} ({dosage}) लेने का समय हो गया है। पुष्टि के लिए 1 दबाएं।",
@@ -29,6 +30,7 @@ MESSAGES = {
         "vital_critical": "🚨 गंभीर स्वास्थ्य अलर्ट: {patient} की {vital_label} रीडिंग {value} है — यह सुरक्षित सीमा से बाहर है। कृपया तुरंत डॉक्टर से संपर्क करें।",
         "vital_critical_doctor": "🏥 गंभीर स्वास्थ्य अलर्ट: मरीज {patient} की {vital_label} रीडिंग {value} गंभीर स्तर पर है। तुरंत ध्यान चाहिए।",
         "trend_rising": "📈 ट्रेंड अलर्ट: {patient} की {vital_label} पिछली 5 रीडिंग्स में लगातार बढ़ रही है। कृपया ध्यान रखें और ज़रूरत पड़ने पर डॉक्टर से संपर्क करें।",
+        "weekly_report": "📄 आपकी साप्ताहिक स्वास्थ्य रिपोर्ट तैयार है: {link}",
     }
 }
 
