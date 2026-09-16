@@ -9,6 +9,7 @@ Three jobs:
 
 Start/stop are wired into FastAPI's startup/shutdown events in main.py.
 """
+import os
 import logging
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -24,6 +25,8 @@ from app.services.dose_service import (
 from app.services.stock_service import check_and_send_reorder_alerts
 from app.database.models import BlockedToken
 from sqlalchemy import delete
+from app.services.pdf_report_service import generate_weekly_report
+from app.services.dose_service import send_whatsapp_message, MESSAGES
 
 logger = logging.getLogger("reminder_scheduler")
 scheduler = AsyncIOScheduler()
@@ -68,6 +71,36 @@ async def job_cleanup_expired_tokens():
         await db.execute(delete(BlockedToken).where(BlockedToken.expires_at < now))
         await db.commit()
 
+async def job_generate_weekly_reports():
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(select(Patient).where(Patient.is_active == True))
+        patients = result.scalars().all()
+
+        sent = 0
+        for patient in patients:
+            if not patient.user_id:
+                continue  # only patients with a linked login account
+
+            try:
+                report = await generate_weekly_report(patient, db)
+                lang = patient.language or "en"
+                templates = MESSAGES.get(lang, MESSAGES["en"])
+
+                base_url = os.getenv("FRONTEND_BASE_URL", "http://localhost:8000")
+                download_link = f"{base_url}/api/v1/reports/{report.id}/download"
+
+                msg = templates.get("weekly_report", "📄 Your weekly health report is ready: {link}").format(link=download_link)
+                send_whatsapp_message(patient.phone, msg)
+
+                if patient.doctor_phone:
+                    send_whatsapp_message(patient.doctor_phone, msg)
+
+                sent += 1
+            except Exception as e:
+                logger.error(f"[scheduler] Failed to generate weekly report for patient {patient.id}: {e}")
+
+        logger.info(f"[scheduler] Weekly reports generated for {sent} patient(s)")
+
 def start_scheduler():
     scheduler.add_job(
         job_generate_todays_doses,
@@ -97,6 +130,12 @@ def start_scheduler():
         job_cleanup_expired_tokens,
         CronTrigger(hour=3, minute=0),
         id="cleanup_expired_tokens",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        job_generate_weekly_reports,
+        CronTrigger(day_of_week="sun", hour=23, minute=0),
+        id="weekly_reports",
         replace_existing=True,
     )
     scheduler.start()
