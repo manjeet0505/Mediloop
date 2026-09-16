@@ -151,3 +151,18 @@ class VitalReading(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     trend_alert_sent = Column(Boolean, default=False, nullable=False)
     patient = relationship("Patient", back_populates="vital_readings")
+
+# ── Weekly Reports ─────────────────────────────────────────────────
+class WeeklyReport(Base):
+    __tablename__ = "weekly_reports"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    patient_id = Column(String, ForeignKey("patients.id"), nullable=False)
+    file_path = Column(String, nullable=False)
+    week_start = Column(DateTime(timezone=True), nullable=False)
+    week_end = Column(DateTime(timezone=True), nullable=False)
+    adherence_pct = Column(Integer, nullable=True)
+    ai_summary = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    patient = relationship("Patient", back_populates="weekly_reports")
