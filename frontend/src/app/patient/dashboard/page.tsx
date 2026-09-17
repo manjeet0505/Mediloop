@@ -469,31 +469,61 @@ const [showLogVitals, setShowLogVitals] = useState(false);
           </motion.div>
 
           {/* Vitals */}
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.21 }}
-            style={{ marginBottom: 40 }}>
-            <h2 style={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 400, letterSpacing: "0.02em", marginBottom: 20 }}>
-              VITALS
-            </h2>
-            {VITALS.map((v, i) => (
-              <div key={i} style={{
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "12px 0", borderBottom: "1px solid var(--border-subtle)",
-              }}>
-                <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{v.label}</span>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)" }}>
-                    {v.value} <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 400 }}>{v.unit}</span>
-                  </span>
-                  <span style={{
-                    fontSize: 10, padding: "2px 8px", borderRadius: 4,
-                    background: v.ok ? "var(--success-bg)" : "var(--warning-bg)",
-                    color: v.ok ? "var(--success)" : "var(--warning)",
-                    border: `1px solid color-mix(in srgb, ${v.ok ? "var(--success)" : "var(--warning)"} 25%, transparent)`,
-                  }}>{v.ok ? "Normal" : "Watch"}</span>
-                </div>
-              </div>
-            ))}
-          </motion.div>
+<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.21 }}
+  style={{ marginBottom: 40 }}>
+  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+    <h2 style={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 400, letterSpacing: "0.02em" }}>
+      VITALS
+    </h2>
+    <button onClick={() => setShowLogVitals(true)} style={{
+      fontSize: 11, color: "var(--text-muted)", background: "transparent",
+      border: "1px solid var(--border-default)", borderRadius: 6, padding: "3px 10px",
+      cursor: "pointer", fontFamily: "inherit",
+    }}>
+      + Log
+    </button>
+  </div>
+
+  {vitalsData.length === 0 ? (
+    <div style={{ padding: "20px 0", textAlign: "center" }}>
+      <p style={{ fontSize: 12, color: "var(--text-muted)" }}>No vitals logged yet</p>
+    </div>
+  ) : (
+    vitalsData.map((v, i) => {
+      const meta: Record<string, { label: string; unit: string }> = {
+        bp: { label: "Blood pressure", unit: "mmHg" },
+        blood_sugar: { label: "Blood sugar", unit: "mg/dL" },
+        weight: { label: "Weight", unit: "kg" },
+        spo2: { label: "SpO2", unit: "%" },
+        heart_rate: { label: "Heart rate", unit: "bpm" },
+      };
+      const label = meta[v.vital_type]?.label ?? v.vital_type;
+      const display = v.value_2 ? `${v.value_1}/${v.value_2}` : v.value_1;
+      const statusColor = v.status === "critical" ? "var(--danger)" : v.status === "watch" ? "var(--warning)" : "var(--success)";
+      const statusBg = v.status === "critical" ? "var(--danger-bg, rgba(239,68,68,0.1))" : v.status === "watch" ? "var(--warning-bg)" : "var(--success-bg)";
+      const statusLabel = v.status === "critical" ? "Critical" : v.status === "watch" ? "Watch" : "Normal";
+
+      return (
+        <div key={i} style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "12px 0", borderBottom: "1px solid var(--border-subtle)",
+        }}>
+          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{label}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)" }}>
+              {display} <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 400 }}>{v.unit}</span>
+            </span>
+            <span style={{
+              fontSize: 10, padding: "2px 8px", borderRadius: 4,
+              background: statusBg, color: statusColor,
+              border: `1px solid color-mix(in srgb, ${statusColor} 25%, transparent)`,
+            }}>{statusLabel}</span>
+          </div>
+        </div>
+      );
+    })
+  )}
+</motion.div>
 
           {/* Stock */}
           {lowStock.length > 0 && (
