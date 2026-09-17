@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { authService } from "@/lib/auth";
+import LogVitalsModal from "@/components/patient/LogVitalsModal";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -25,13 +26,6 @@ async function confirmDose(doseId: string, token: string) {
 const WEEK_DEFAULT = [
   { d: "M", p: 100 }, { d: "T", p: 67 }, { d: "W", p: 100 },
   { d: "T", p: 33 }, { d: "F", p: 100 }, { d: "S", p: 67 }, { d: "S", p: 67 },
-];
-
-const VITALS = [
-  { label: "Blood pressure", value: "128/82", unit: "mmHg", ok: true },
-  { label: "Blood sugar", value: "142", unit: "mg/dL", ok: false },
-  { label: "Weight", value: "72", unit: "kg", ok: true },
-  { label: "SpO2", value: "98", unit: "%", ok: true },
 ];
 
 const ACTIVITY = [
@@ -118,6 +112,8 @@ export default function PatientDashboard() {
   const [stockData, setStockData] = useState<any[]>([]);
   const [burstAt, setBurstAt] = useState<number | null>(null);
   const [errorAt, setErrorAt] = useState<number | null>(null);
+  const [vitalsData, setVitalsData] = useState<any[]>([]);
+const [showLogVitals, setShowLogVitals] = useState(false);
 
   useEffect(() => {
     setUser(authService.getUser());
@@ -133,6 +129,7 @@ export default function PatientDashboard() {
         setMeds(medicines);
         setAdherenceData(adherence);
         setStockData(stock);
+        fetchVitals();
       } catch (err) { console.error(err); }
     }, 100);
     return () => clearTimeout(timer);
@@ -158,6 +155,19 @@ export default function PatientDashboard() {
       setConfirming(null);
     }
   };
+  const fetchVitals = async () => {
+  const token = authService.getToken();
+  if (!token) return;
+  try {
+    const data = await fetchPatient("/me/vitals?days=90", token);
+    // keep only the latest reading per vital_type (already sorted desc by backend)
+    const latestByType: Record<string, any> = {};
+    for (const r of data) {
+      if (!latestByType[r.vital_type]) latestByType[r.vital_type] = r;
+    }
+    setVitalsData(Object.values(latestByType));
+  } catch (err) { console.error(err); }
+};
 
   const adherence = adherenceData?.overall ?? 87;
   const streak = adherenceData?.streak ?? 5;
