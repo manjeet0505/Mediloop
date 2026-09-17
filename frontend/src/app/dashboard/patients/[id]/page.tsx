@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { authService } from "@/lib/auth";
 import UploadPrescriptionModal from "@/components/patients/UploadPrescriptionModal";
 import EditPatientModal from "@/components/patients/EditPatientModal";
+import VitalsCard from "@/components/patients/VitalsCard";
 import {
   EASE,
   CountUp,
@@ -357,15 +358,7 @@ const handleSendReminder = () => {
   </div>
 </div>
               {/* Vitals */}
-<div>
-  <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", marginBottom: 12 }}>
-    Latest Vitals
-  </div>
-  <div style={{ padding: "24px 0", textAlign: "center" }}>
-    <i className="ti ti-heart-rate-monitor" style={{ fontSize: 28, color: "var(--text-muted)", display: "block", marginBottom: 8, opacity: 0.4 }} />
-    <p style={{ fontSize: 12, color: "var(--text-muted)" }}>Vitals tracking arrives with the Health Monitoring agent</p>
-  </div>
-</div>
+    <VitalsCard patientId={id} />
 
               {/* Quick info */}
               <div>
