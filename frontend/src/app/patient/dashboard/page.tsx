@@ -580,7 +580,11 @@ const [showLogVitals, setShowLogVitals] = useState(false);
 
         </div>
       </div>
-
+      <LogVitalsModal
+  isOpen={showLogVitals}
+  onClose={() => setShowLogVitals(false)}
+  onSuccess={fetchVitals}
+/>
       <style jsx global>{`
         @keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:0.8} }
         @media (max-width: 768px) {
