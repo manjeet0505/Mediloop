@@ -193,10 +193,10 @@ export default function LoginPage() {
     <div style={{ minHeight: "100vh", display: "flex", background: "var(--bg-page)" }}>
 
       {/* Left — Live product panel */}
-      <div style={{ flex: 1, borderRight: "1px solid var(--border-subtle)", display: window.innerWidth < 1024 ? "none" : undefined } as any}
-        className="hidden lg:block">
-        <LivePanel />
-      </div>
+      <div style={{ flex: 1, borderRight: "1px solid var(--border-subtle)" }}
+  className="hidden lg:block">
+  <LivePanel />
+</div>
 
       {/* Right — Login form */}
       <div style={{

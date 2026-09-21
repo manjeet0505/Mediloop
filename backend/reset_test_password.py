@@ -4,8 +4,8 @@ from app.database.connection import AsyncSessionLocal
 from app.database.models import User
 from app.utils.auth import hash_password
 
-EMAIL = "testpatient@example.com"
-NEW_PASSWORD = "test1234"
+EMAIL = "mishramanjeet26@gmail.com"
+NEW_PASSWORD = "Ramji234"
 
 async def reset():
     async with AsyncSessionLocal() as db:
