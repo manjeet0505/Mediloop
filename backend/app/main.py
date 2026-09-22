@@ -17,6 +17,7 @@ from app.routes.stock import router as stock_router
 from app.routes.dashboard import router as dashboard_router
 from app.routes.vitals import router as vitals_router
 from app.routes.reports import router as reports_router
+from app.routes.calendar import router as calendar_router
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -52,6 +53,7 @@ app.include_router(system_router)
 app.include_router(dashboard_router)
 app.include_router(vitals_router)
 app.include_router(reports_router)
+app.include_router(calendar_router)
 
 @app.get("/")
 async def root():
