@@ -71,13 +71,13 @@ class Patient(Base):
     escalation_level = Column(String, default="normal")
     last_escalation_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-
     clinic = relationship("User", back_populates="patients", foreign_keys=[clinic_id])
     prescriptions = relationship("Prescription", back_populates="patient")
     dose_events = relationship("DoseEvent", back_populates="patient")
     stock_levels = relationship("StockLevel", back_populates="patient")
     vital_readings = relationship("VitalReading", back_populates="patient")  
     weekly_reports = relationship("WeeklyReport", back_populates="patient")
+    appointments = relationship("Appointment", back_populates="patient") 
 
 # ── Prescriptions ──────────────────────────────────────────────────
 class Prescription(Base):
