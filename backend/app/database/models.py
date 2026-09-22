@@ -50,8 +50,8 @@ class User(Base):
     phone = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-
     patients = relationship("Patient", back_populates="clinic", foreign_keys="[Patient.clinic_id]")
+    calendar_credential = relationship("CalendarCredential", back_populates="user", uselist=False)
 
 # ── Patients ───────────────────────────────────────────────────────
 class Patient(Base):
