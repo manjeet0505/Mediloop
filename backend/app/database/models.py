@@ -167,3 +167,37 @@ class WeeklyReport(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     patient = relationship("Patient", back_populates="weekly_reports")
+
+# ── Google Calendar Credentials (per clinic user) ───────────────────
+class CalendarCredential(Base):
+    __tablename__ = "calendar_credentials"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    user_id = Column(String, ForeignKey("users.id"), unique=True, nullable=False)
+    access_token = Column(Text, nullable=False)
+    refresh_token = Column(Text, nullable=False)
+    token_expiry = Column(DateTime(timezone=True), nullable=False)
+    calendar_id = Column(String, default="primary")
+    connected_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User", back_populates="calendar_credential")
+
+
+# ── Appointments ──────────────────────────────────────────────────
+class Appointment(Base):
+    __tablename__ = "appointments"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    patient_id = Column(String, ForeignKey("patients.id"), nullable=False)
+    doctor_name = Column(String, nullable=True)
+    scheduled_at = Column(DateTime(timezone=True), nullable=False)
+    status = Column(String, default="scheduled")   # scheduled | completed | cancelled | missed
+    notes = Column(Text, nullable=True)
+    google_event_id = Column(String, nullable=True)   # null if calendar not connected
+    pre_visit_brief = Column(Text, nullable=True)
+    brief_sent_at = Column(DateTime(timezone=True), nullable=True)
+    reminder_1d_sent_at = Column(DateTime(timezone=True), nullable=True)
+    reminder_2h_sent_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    patient = relationship("Patient", back_populates="appointments")
