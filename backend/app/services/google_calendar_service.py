@@ -33,11 +33,14 @@ CLIENT_CONFIG = {
 
 def get_authorization_url(state: str) -> str:
     """Step A — build the Google consent screen URL."""
-    flow = Flow.from_client_config(CLIENT_CONFIG, scopes=SCOPES, redirect_uri=GOOGLE_REDIRECT_URI)
+    flow = Flow.from_client_config(
+        CLIENT_CONFIG, scopes=SCOPES, redirect_uri=GOOGLE_REDIRECT_URI,
+        autogenerate_code_verifier=False,   # ← naya — disable PKCE, hum confidential client hain
+    )
     auth_url, _ = flow.authorization_url(
-        access_type="offline",       # required to get a refresh_token
+        access_type="offline",
         include_granted_scopes="true",
-        prompt="consent",            # forces refresh_token on every connect (avoids silent re-auth issues)
+        prompt="consent",
         state=state,
     )
     return auth_url
@@ -45,7 +48,10 @@ def get_authorization_url(state: str) -> str:
 
 async def exchange_code_and_save(code: str, user_id: str, db: AsyncSession) -> None:
     """Step B — exchange the authorization code for tokens, save/update in DB."""
-    flow = Flow.from_client_config(CLIENT_CONFIG, scopes=SCOPES, redirect_uri=GOOGLE_REDIRECT_URI)
+    flow = Flow.from_client_config(
+        CLIENT_CONFIG, scopes=SCOPES, redirect_uri=GOOGLE_REDIRECT_URI,
+        autogenerate_code_verifier=False,   # ← naya — match with above
+    )
     flow.fetch_token(code=code)
     creds = flow.credentials
 
