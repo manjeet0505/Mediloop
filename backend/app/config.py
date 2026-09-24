@@ -12,7 +12,10 @@ class Settings(BaseSettings):
     whatsapp_access_token: str = ""
     whatsapp_phone_number_id: str = ""
     JWT_SECRET_KEY: str = ""
-
+    google_client_id: str = ""
+    google_client_secret: str = ""
+    google_redirect_uri: str = ""
+    
     class Config:
         env_file = ".env"
 
