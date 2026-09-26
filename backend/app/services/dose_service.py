@@ -22,6 +22,9 @@ MESSAGES = {
         "vital_critical_doctor": "🏥 Critical Vital Alert: Patient {patient} recorded a critical {vital_label} reading of {value}. Immediate review needed.",
         "trend_rising": "📈 Trend Alert: {patient}'s {vital_label} has been consistently rising over the last 5 readings. Please monitor closely and consult your doctor if it continues.",
          "weekly_report": "📄 Your weekly health report is ready: {link}",
+          "appointment_reminder_1d": "🏥 Reminder: You have an appointment with {doctor} tomorrow at {time}. Please plan accordingly.",
+    "appointment_reminder_2h": "🏥 Reminder: Your appointment with {doctor} is in 2 hours ({time}).",
+    "pre_visit_brief_doctor": "📋 Pre-visit brief for {patient} (appointment at {time}):\n\n{brief}",
     },
     "hi": {
         "reminder": "💊 दवाई याद दिलाना: {medicine} ({dosage}) लेने का समय हो गया है। पुष्टि के लिए 1 दबाएं।",
@@ -31,6 +34,9 @@ MESSAGES = {
         "vital_critical_doctor": "🏥 गंभीर स्वास्थ्य अलर्ट: मरीज {patient} की {vital_label} रीडिंग {value} गंभीर स्तर पर है। तुरंत ध्यान चाहिए।",
         "trend_rising": "📈 ट्रेंड अलर्ट: {patient} की {vital_label} पिछली 5 रीडिंग्स में लगातार बढ़ रही है। कृपया ध्यान रखें और ज़रूरत पड़ने पर डॉक्टर से संपर्क करें।",
         "weekly_report": "📄 आपकी साप्ताहिक स्वास्थ्य रिपोर्ट तैयार है: {link}",
+        "appointment_reminder_1d": "🏥 याद दिलाना: कल {time} बजे {doctor} के साथ आपकी अपॉइंटमेंट है। कृपया समय पर पहुंचें।",
+    "appointment_reminder_2h": "🏥 याद दिलाना: {doctor} के साथ आपकी अपॉइंटमेंट 2 घंटे में ({time}) है।",
+    "pre_visit_brief_doctor": "📋 {patient} के लिए विज़िट-पूर्व सारांश (अपॉइंटमेंट {time} बजे):\n\n{brief}",
     }
 }
 
