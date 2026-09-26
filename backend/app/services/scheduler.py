@@ -163,6 +163,24 @@ def start_scheduler():
         id="weekly_reports",
         replace_existing=True,
     )
+    scheduler.add_job(
+        job_appointment_reminders_1d,
+        IntervalTrigger(minutes=30),
+        id="appointment_reminders_1d",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        job_appointment_reminders_2h,
+        IntervalTrigger(minutes=15),
+        id="appointment_reminders_2h",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        job_pre_visit_briefs,
+        IntervalTrigger(minutes=15),
+        id="pre_visit_briefs",
+        replace_existing=True,
+    )
     scheduler.start()
     logger.info("[scheduler] Reminder scheduler started — reminders + escalation are now live")
 
