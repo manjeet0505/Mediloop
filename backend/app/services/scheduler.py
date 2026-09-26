@@ -27,6 +27,11 @@ from app.database.models import BlockedToken
 from sqlalchemy import delete
 from app.services.pdf_report_service import generate_weekly_report
 from app.services.dose_service import send_whatsapp_message, MESSAGES
+from app.services.appointment_service import (
+    send_appointment_reminders_1d,
+    send_appointment_reminders_2h,
+    send_pre_visit_briefs,
+)
 
 logger = logging.getLogger("reminder_scheduler")
 scheduler = AsyncIOScheduler()
@@ -100,6 +105,26 @@ async def job_generate_weekly_reports():
                 logger.error(f"[scheduler] Failed to generate weekly report for patient {patient.id}: {e}")
 
         logger.info(f"[scheduler] Weekly reports generated for {sent} patient(s)")
+
+async def job_appointment_reminders_1d():
+    async with AsyncSessionLocal() as db:
+        sent = await send_appointment_reminders_1d(db)
+        if sent:
+            logger.info(f"[scheduler] Sent {sent} 1-day appointment reminder(s)")
+
+
+async def job_appointment_reminders_2h():
+    async with AsyncSessionLocal() as db:
+        sent = await send_appointment_reminders_2h(db)
+        if sent:
+            logger.info(f"[scheduler] Sent {sent} 2-hour appointment reminder(s)")
+
+
+async def job_pre_visit_briefs():
+    async with AsyncSessionLocal() as db:
+        sent = await send_pre_visit_briefs(db)
+        if sent:
+            logger.info(f"[scheduler] Sent {sent} pre-visit brief(s)")
 
 def start_scheduler():
     scheduler.add_job(
