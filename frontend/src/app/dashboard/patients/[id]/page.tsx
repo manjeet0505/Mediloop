@@ -6,6 +6,7 @@ import { authService } from "@/lib/auth";
 import UploadPrescriptionModal from "@/components/patients/UploadPrescriptionModal";
 import EditPatientModal from "@/components/patients/EditPatientModal";
 import VitalsCard from "@/components/patients/VitalsCard";
+import AppointmentsTab from "@/components/patients/AppointmentsTab";
 import {
   EASE,
   CountUp,
@@ -16,7 +17,7 @@ import {
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-const TABS = ["Overview", "Medicines", "Dose History", "Stock", "Prescriptions"];
+const TABS = ["Overview", "Medicines", "Dose History", "Stock", "Prescriptions", "Appointments"];
 
 function StatusDot({ status }: { status: string }) {
   const color = status === "normal" ? "var(--success)" : status === "warning" ? "var(--warning)" : "var(--danger)";
