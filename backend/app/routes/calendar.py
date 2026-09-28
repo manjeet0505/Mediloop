@@ -37,6 +37,7 @@ async def calendar_callback(code: str, state: str, db: AsyncSession = Depends(ge
 
     await exchange_code_and_save(code, user_id, db)
     return RedirectResponse(url=f"{FRONTEND_URL}/dashboard/settings?calendar=connected")
+    return RedirectResponse(url=f"{FRONTEND_URL}/dashboard/patients?calendar=connected")
 
 
 @router.get("/status")
