@@ -650,7 +650,7 @@ const handleSendReminder = () => {
               )}
             </div>
           )}
-
+     {activeTab === "Appointments" && <AppointmentsTab patientId={id} />}
         </motion.div>
       </AnimatePresence>
 
