@@ -113,7 +113,8 @@ export default function PatientDashboard() {
   const [burstAt, setBurstAt] = useState<number | null>(null);
   const [errorAt, setErrorAt] = useState<number | null>(null);
   const [vitalsData, setVitalsData] = useState<any[]>([]);
-const [showLogVitals, setShowLogVitals] = useState(false);
+ const [showLogVitals, setShowLogVitals] = useState(false);
+const [nextAppt, setNextAppt] = useState<any>(null);
 
   useEffect(() => {
     setUser(authService.getUser());
