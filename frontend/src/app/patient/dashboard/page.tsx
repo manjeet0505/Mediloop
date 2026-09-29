@@ -184,6 +184,14 @@ const [nextAppt, setNextAppt] = useState<any>(null);
   const hour = new Date().getHours();
   const greet = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const countdown = useCountdown(nextDose?.time ?? "12:00 AM");
+  const apptDate = nextAppt ? new Date(nextAppt.scheduled_at) : null;
+  let apptWhen = "";
+  if (apptDate) {
+  const startOf = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const dayDiff = Math.round((startOf(apptDate) - startOf(new Date())) / 86400000);
+  const time = apptDate.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true });
+  apptWhen = `${dayDiff <= 0 ? "Today" : dayDiff === 1 ? "Tomorrow" : `In ${dayDiff} days`} · ${time}`;
+ }
 
   return (
     <div>
@@ -562,25 +570,33 @@ const [nextAppt, setNextAppt] = useState<any>(null);
           )}
 
           {/* Follow up */}
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.27 }}>
-            <h2 style={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 400, letterSpacing: "0.02em", marginBottom: 20 }}>
-              NEXT APPOINTMENT
-            </h2>
-            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <div style={{
-                width: 40, height: 40, borderRadius: 8, flexShrink: 0,
-                border: "1px solid var(--border-default)",
-                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-              }}>
-                <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1 }}>22</span>
-                <span style={{ fontSize: 8, color: "var(--text-muted)", letterSpacing: "0.06em", marginTop: 1 }}>JUN</span>
-              </div>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text-primary)" }}>Dr. Priya Mehta</div>
-                <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 3 }}>In 3 days · 10:00 AM</div>
-              </div>
-            </div>
-          </motion.div>
+<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.27 }}>
+  <h2 style={{ fontSize: 13, color: "var(--text-secondary)", fontWeight: 400, letterSpacing: "0.02em", marginBottom: 20 }}>
+    NEXT APPOINTMENT
+  </h2>
+  {apptDate ? (
+    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+      <div style={{
+        width: 40, height: 40, borderRadius: 8, flexShrink: 0,
+        border: "1px solid var(--border-default)",
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+      }}>
+        <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1 }}>
+          {apptDate.getDate()}
+        </span>
+        <span style={{ fontSize: 8, color: "var(--text-muted)", letterSpacing: "0.06em", marginTop: 1 }}>
+          {apptDate.toLocaleString("en-IN", { month: "short" }).toUpperCase()}
+        </span>
+      </div>
+      <div>
+        <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text-primary)" }}>{nextAppt.doctor_name}</div>
+        <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 3 }}>{apptWhen}</div>
+      </div>
+    </div>
+  ) : (
+    <p style={{ fontSize: 12, color: "var(--text-muted)" }}>No upcoming appointments</p>
+  )}
+</motion.div>
 
         </div>
       </div>
