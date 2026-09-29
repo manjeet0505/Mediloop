@@ -130,6 +130,9 @@ const [nextAppt, setNextAppt] = useState<any>(null);
         setMeds(medicines);
         setAdherenceData(adherence);
         setStockData(stock);
+        fetchPatient("/me/appointment", token)
+  .then((a) => setNextAppt(a))
+  .catch(() => setNextAppt(null));
         fetchVitals();
       } catch (err) { console.error(err); }
     }, 100);
