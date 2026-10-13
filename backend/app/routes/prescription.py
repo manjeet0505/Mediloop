@@ -53,7 +53,19 @@ async def get_owned_patient(patient_id: str, current_user: User, db: AsyncSessio
         raise HTTPException(status_code=404, detail="Patient not found")
     return patient
 
-
+async def _index_in_background(patient_id, prescription_id, doctor_name, medications, raw_text, created_at):
+    try:
+        await index_prescription(
+            patient_id=patient_id,
+            prescription_id=prescription_id,
+            doctor_name=doctor_name,
+            medications=medications,
+            raw_text=raw_text,
+            created_at=created_at,
+        )
+    except Exception as e:
+        logger.warning("Could not index prescription %s into Qdrant: %s", prescription_id, e)
+        
 @router.post("/parse", response_model=PrescriptionResponse)
 async def parse_prescription(
     file: UploadFile = File(...),
