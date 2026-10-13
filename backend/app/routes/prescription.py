@@ -8,13 +8,16 @@ from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException, B
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from app.agents.prescription_agent import process_prescription, parse_with_openai
+from app.agents.prescription_agent import process_prescription, parse_with_openai, answer_history_question
+from app.services.interaction_service import evaluate_new_medicines
+from app.services.rag_service import index_prescription, search_patient_history
 from app.models.prescription import PrescriptionResponse, ConfirmPrescriptionRequest
 from app.database.connection import get_db
 from app.database.models import User, Patient, Prescription, DoseEvent, StockLevel
 from app.utils.auth import get_current_user
 
 router = APIRouter(prefix="/api/v1/prescription", tags=["Prescription Agent"])
+logger = logging.getLogger("prescription_routes")
 
 DOSE_TIMES = {
     1: ["09:00"],
@@ -66,6 +69,25 @@ async def parse_prescription(
 
     image_bytes = await file.read()
     result = await process_prescription(image_bytes, file.content_type)
+
+    # Check the newly parsed medicines against what the patient is already taking.
+    # Never blocks the parse - it only adds to the safety note / flag for the doctor to review.
+    if result.success and result.care_plan and result.care_plan.medications:
+        stock_rows = await db.execute(select(StockLevel).where(StockLevel.patient_id == patient_id))
+        existing_names = [
+            s.medicine_name for s in stock_rows.scalars().all()
+            if (s.total_quantity - s.doses_taken) > 0
+        ]
+        report = await evaluate_new_medicines(
+            [m.medicine_name for m in result.care_plan.medications],
+            existing_names,
+        )
+        care = result.care_plan
+        if report["note"]:
+            care.safety_note = f"{care.safety_note}\n{report['note']}" if care.safety_note else report["note"]
+        if report["has_major"]:
+            care.safety_flag = True
+
     return result
 
 
