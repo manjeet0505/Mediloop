@@ -2,7 +2,10 @@ import re
 import json
 import uuid
 from datetime import datetime, timedelta, timezone, date
-from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException
+import asyncio
+import logging
+from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException, BackgroundTasks
+from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.agents.prescription_agent import process_prescription, parse_with_openai
