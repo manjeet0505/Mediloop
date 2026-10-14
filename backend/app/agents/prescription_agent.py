@@ -146,3 +146,29 @@ async def process_prescription(image_bytes: bytes, content_type: str = "image/jp
         raw_text="",  # no separate OCR text anymore — vision model reads directly
         llm_used="openai-vision",
     )
+
+HISTORY_QA_SYSTEM_PROMPT = """You answer questions for clinic staff about ONE patient's prescription history.
+Rules:
+- Use ONLY the prescription records provided. Do not use outside knowledge about this patient.
+- If the records do not contain the answer, say clearly that the records don't show it. Never guess.
+- Mention the prescription date and doctor when relevant.
+- Do not give new medical advice, dose changes or diagnoses. Summarise what the records say.
+- Keep the answer short and plain."""
+
+
+async def answer_history_question(question: str, records: list[dict]) -> str:
+    context = "\n\n".join(
+        f"[Record {i + 1}] Date: {r.get('created_at') or 'unknown'} | Doctor: {r.get('doctor_name') or 'unknown'}\n{r['summary']}"
+        for i, r in enumerate(records)
+    )
+    client = openai.AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+    response = await client.chat.completions.create(
+        model="gpt-4o-mini",
+        max_tokens=400,
+        temperature=0,
+        messages=[
+            {"role": "system", "content": HISTORY_QA_SYSTEM_PROMPT},
+            {"role": "user", "content": f"Prescription records:\n{context}\n\nQuestion: {question}"},
+        ],
+    )
+    return response.choices[0].message.content.strip()
