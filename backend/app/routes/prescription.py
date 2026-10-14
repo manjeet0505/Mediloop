@@ -65,7 +65,7 @@ async def _index_in_background(patient_id, prescription_id, doctor_name, medicat
         )
     except Exception as e:
         logger.warning("Could not index prescription %s into Qdrant: %s", prescription_id, e)
-        
+
 @router.post("/parse", response_model=PrescriptionResponse)
 async def parse_prescription(
     file: UploadFile = File(...),
@@ -115,6 +115,7 @@ async def parse_prescription_text(text: str):
 @router.post("/confirm")
 async def confirm_prescription(
     data: ConfirmPrescriptionRequest,
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -194,8 +195,19 @@ async def confirm_prescription(
                 doses_per_day=times_per_day,
             ))
 
-    await db.commit()
+        await db.commit()
     await db.refresh(prescription)
+
+    # Index for history search AFTER the commit, in the background - a failure here must never undo the save.
+    background_tasks.add_task(
+        _index_in_background,
+        patient.id,
+        prescription.id,
+        data.doctor_name,
+        [m.model_dump() for m in data.medications],
+        data.raw_text,
+        prescription.created_at,
+    )
 
     return {
         "success": True,
