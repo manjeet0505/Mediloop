@@ -294,3 +294,43 @@ async def list_clinic_prescriptions(
         })
 
     return output
+
+
+class AskRequest(BaseModel):
+    question: str = Field(min_length=3, max_length=500)
+
+
+@router.post("/patient/{patient_id}/ask")
+async def ask_patient_history(
+    patient_id: str,
+    body: AskRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Clinic staff ask a question about ONE patient's stored prescriptions. Answers only from stored records."""
+    patient = await get_owned_patient(patient_id, current_user, db)
+
+    try:
+        records = await asyncio.wait_for(
+            search_patient_history(patient.id, body.question, limit=5), timeout=15
+        )
+    except Exception as e:
+        logger.warning("History search failed for patient %s: %s", patient.id, e)
+        raise HTTPException(status_code=503, detail="History search is temporarily unavailable")
+
+    if not records:
+        return {"answer": "No prescription records are indexed for this patient yet.", "sources": []}
+
+    try:
+        answer = await answer_history_question(body.question, records)
+    except Exception as e:
+        logger.warning("History answer generation failed: %s", e)
+        raise HTTPException(status_code=503, detail="Could not generate an answer right now")
+
+    return {
+        "answer": answer,
+        "sources": [
+            {"prescription_id": r["prescription_id"], "doctor_name": r["doctor_name"], "created_at": r["created_at"]}
+            for r in records
+        ],
+    }
