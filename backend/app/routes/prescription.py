@@ -115,7 +115,6 @@ async def parse_prescription_text(text: str):
 @router.post("/confirm")
 async def confirm_prescription(
     data: ConfirmPrescriptionRequest,
-    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -124,9 +123,30 @@ async def confirm_prescription(
     if not data.medications:
         raise HTTPException(status_code=400, detail="At least one medication is required")
 
+    # Frontend sends one UUID per review session. Same UUID twice = same prescription, never a duplicate.
+    if data.prescription_id:
+        try:
+            prescription_id = str(uuid.UUID(data.prescription_id))
+        except ValueError:
+            raise HTTPException(status_code=400, detail="prescription_id must be a valid UUID")
+    else:
+        prescription_id = str(uuid.uuid4())
+
+    existing = await db.get(Prescription, prescription_id)
+    if existing:
+        if existing.patient_id != patient.id:
+            raise HTTPException(status_code=409, detail="prescription_id already in use")
+        return {
+            "success": True,
+            "prescription_id": existing.id,
+            "medications_saved": len(data.medications),
+            "doses_created_today": 0,
+            "already_saved": True,
+        }
+
     medications_json = json.dumps([m.model_dump() for m in data.medications])
     prescription = Prescription(
-        id=str(uuid.uuid4()),
+        id=prescription_id,
         patient_id=patient.id,
         doctor_name=data.doctor_name,
         raw_text=data.raw_text,
@@ -149,14 +169,14 @@ async def confirm_prescription(
             hour, minute = map(int, time_str.split(":"))
             scheduled = today_start.replace(hour=hour, minute=minute)
 
-            existing = await db.execute(
+            existing_dose = await db.execute(
                 select(DoseEvent).where(
                     DoseEvent.patient_id == patient.id,
                     DoseEvent.medicine_name == med.medicine_name,
                     DoseEvent.scheduled_time == scheduled,
                 )
             )
-            if existing.scalar_one_or_none():
+            if existing_dose.scalar_one_or_none():
                 continue
 
             db.add(DoseEvent(
@@ -195,25 +215,35 @@ async def confirm_prescription(
                 doses_per_day=times_per_day,
             ))
 
-        await db.commit()
+    # One transaction for the whole prescription: all of it saves, or none of it.
+    await db.commit()
     await db.refresh(prescription)
 
-    # Index for history search AFTER the commit, in the background - a failure here must never undo the save.
-    background_tasks.add_task(
-        _index_in_background,
-        patient.id,
-        prescription.id,
-        data.doctor_name,
-        [m.model_dump() for m in data.medications],
-        data.raw_text,
-        prescription.created_at,
-    )
+    # Indexing runs AFTER the commit. A failure here never undoes the save, but it is reported to the client.
+    indexed = False
+    try:
+        await asyncio.wait_for(
+            index_prescription(
+                patient_id=patient.id,
+                prescription_id=prescription.id,
+                doctor_name=data.doctor_name,
+                medications=[m.model_dump() for m in data.medications],
+                raw_text=data.raw_text,
+                created_at=prescription.created_at,
+            ),
+            timeout=15,
+        )
+        indexed = True
+    except Exception as e:
+        logger.warning("Prescription %s saved but not indexed: %s", prescription.id, e)
 
     return {
         "success": True,
         "prescription_id": prescription.id,
         "medications_saved": len(data.medications),
         "doses_created_today": created_doses,
+        "indexed": indexed,
+        "index_error": None if indexed else "indexing_failed",
     }
 
 
