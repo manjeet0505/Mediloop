@@ -303,13 +303,31 @@ export default function UploadPrescriptionModal({ isOpen, patientId, onClose, on
                   AI-extracted fields — edit anything that looks off before saving
                 </p>
 
-                {safetyFlag && (
+                               {safetyNote && (
                   <div style={{
-                    display: "flex", gap: 8, padding: "10px 0", marginBottom: 16,
-                    borderBottom: "1px solid var(--border-subtle)",
+                    display: "flex", gap: 10, padding: "10px 12px", marginBottom: 16,
+                    borderRadius: 10,
+                    border: `1px solid color-mix(in srgb, ${safetyFlag ? "var(--danger)" : "var(--warning)"} 35%, transparent)`,
+                    background: `color-mix(in srgb, ${safetyFlag ? "var(--danger)" : "var(--warning)"} 8%, transparent)`,
                   }}>
-                    <i className="ti ti-alert-triangle" style={{ fontSize: 15, color: "var(--warning)", flexShrink: 0 }} />
-                    <span style={{ fontSize: 12, color: "var(--warning)" }}>{safetyNote}</span>
+                    <i className="ti ti-alert-triangle" style={{
+                      fontSize: 15, flexShrink: 0, marginTop: 2,
+                      color: safetyFlag ? "var(--danger)" : "var(--warning)",
+                    }} />
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{
+                        fontSize: 12, fontWeight: 600, marginBottom: 4,
+                        color: safetyFlag ? "var(--danger)" : "var(--warning)",
+                      }}>
+                        {safetyFlag ? "Major interaction flagged" : "Interaction notes"}
+                      </div>
+                      <span style={{
+                        fontSize: 12, color: "var(--text-secondary)",
+                        whiteSpace: "pre-line", lineHeight: 1.5,
+                      }}>
+                        {safetyNote}
+                      </span>
+                    </div>
                   </div>
                 )}
 
