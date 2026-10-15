@@ -48,3 +48,4 @@ class ConfirmPrescriptionRequest(BaseModel):
     safety_flag: bool = False
     safety_note: Optional[str] = ""
     medications: List[ConfirmMedicationItem]
+    prescription_id: str | None = None
