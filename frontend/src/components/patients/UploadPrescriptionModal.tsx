@@ -78,6 +78,8 @@ export default function UploadPrescriptionModal({ isOpen, patientId, onClose, on
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [parseStage, setParseStage] = useState(0);
   const [error, setError] = useState("");
+  const [prescriptionId, setPrescriptionId] = useState<string>(newPrescriptionId);
+  const [indexed, setIndexed] = useState(true);
 
   const [doctorName, setDoctorName] = useState("");
   const [safetyFlag, setSafetyFlag] = useState(false);
