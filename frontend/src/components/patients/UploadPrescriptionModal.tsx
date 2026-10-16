@@ -20,6 +20,18 @@ const PARSE_STAGES = [
   "Running safety checks...",
 ];
 
+
+function newPrescriptionId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  // Fallback for non-secure origins (e.g. http on a LAN IP), where randomUUID is unavailable
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
+    const r = (Math.random() * 16) | 0;
+    return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
 function ConfidenceBadge({ value }: { value: number }) {
   const pct = Math.round(value * 100);
   const color = pct >= 90 ? "var(--success)" : pct >= 70 ? "var(--warning)" : "var(--danger)";
