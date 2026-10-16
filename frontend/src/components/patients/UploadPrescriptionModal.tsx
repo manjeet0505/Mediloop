@@ -92,6 +92,7 @@ export default function UploadPrescriptionModal({ isOpen, patientId, onClose, on
   const reset = () => {
     setStep("upload"); setFile(null); setPreviewUrl(null); setError("");
     setDoctorName(""); setSafetyFlag(false); setSafetyNote(""); setMedications([]);
+    setPrescriptionId(newPrescriptionId()); setIndexed(true);
     if (stageIntervalRef.current) clearInterval(stageIntervalRef.current);
   };
 
@@ -176,6 +177,7 @@ export default function UploadPrescriptionModal({ isOpen, patientId, onClose, on
         },
         body: JSON.stringify({
           patient_id: patientId,
+          prescription_id: prescriptionId,
           doctor_name: doctorName,
           raw_text: "",
           safety_flag: safetyFlag,
@@ -195,8 +197,10 @@ export default function UploadPrescriptionModal({ isOpen, patientId, onClose, on
         const data = await res.json().catch(() => ({}));
         throw new Error(data.detail || `Request failed (${res.status})`);
       }
-      setStep("done");
-      onSuccess();
+        const result = await res.json();
+         setIndexed(result.indexed !== false);
+         setStep("done");
+         onSuccess();
     } catch (err: any) {
       setError(err.message || "Could not save prescription");
       setStep("review");
@@ -436,6 +440,11 @@ export default function UploadPrescriptionModal({ isOpen, patientId, onClose, on
                 <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 24 }}>
                   Dose reminders are now scheduled and will run automatically
                 </p>
+                   {!indexed && (
+     <p style={{ fontSize: 12, color: "var(--warning)", marginBottom: 20 }}>
+       History search ke liye ye abhi index nahi hui. Prescription save ho gayi hai.
+     </p>
+   )}
                 <MagneticButton variant="ghost" onClick={handleClose} style={{ width: "100%", justifyContent: "center", padding: "11px" }}>
                   Done
                 </MagneticButton>
