@@ -90,9 +90,12 @@ async def confirm_dose(
     )
     dose = result.scalar_one_or_none()
     if not dose:
-        raise HTTPException(status_code=404, detail="Dose not found")
+           raise HTTPException(status_code=404, detail="Dose not found")
 
-        dose.status = "taken"
+    if dose.status == "taken":
+           return {"confirmed": True, "medicine_id": dose.id, "taken_at": dose.taken_at.isoformat() if dose.taken_at else None, "already_taken": True}
+
+    dose.status = "taken"
     dose.taken_at = datetime.now(timezone.utc)
 
     stock_result = await db.execute(
