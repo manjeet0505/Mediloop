@@ -32,7 +32,6 @@ async def main():
                     DoseEvent.patient_id == pid,
                     DoseEvent.medicine_name.ilike(name),
                     DoseEvent.status == "taken",
-                    DoseEvent.scheduled_time >= keep.start_date,
                 )
             )).scalar_one()
 
