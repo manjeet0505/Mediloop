@@ -11,6 +11,16 @@ from app.database.models import Patient, DoseEvent
 import os
 import requests
 
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from app.database.models import StockLevel
+
+DOSE_TIMES = {
+    1: ["09:00"],
+    2: ["09:00", "21:00"],
+    3: ["08:00", "14:00", "20:00"],
+    4: ["08:00", "13:00", "18:00", "22:00"],
+}
+
 # ── Message templates (console stub for now — swap send_whatsapp_message's
 #    body for the real Meta Business API call later, signature stays same) ──
 MESSAGES = {
@@ -86,13 +96,36 @@ def send_whatsapp_message(phone: str, message: str) -> bool:
 
 async def ensure_todays_doses(patient: Patient, db: AsyncSession) -> list[DoseEvent]:
     """
-    Returns today's DoseEvent rows for this patient. If none exist yet,
-    derive today's schedule from the most recent distinct
-    (medicine, dosage, time-of-day) pattern seen in the last 14 days and
-    create fresh 'pending' doses for today.
+    Makes sure every active medicine (stock row with remaining > 0) has its
+    standard slots for today. Missing slots are inserted; existing ones are
+    left alone. Safe to call from several requests at once.
     """
     today_start = datetime.combine(date.today(), datetime.min.time(), tzinfo=timezone.utc)
     today_end = today_start + timedelta(days=1)
+
+    stocks = (await db.execute(
+        select(StockLevel).where(StockLevel.patient_id == patient.id)
+    )).scalars().all()
+
+    for s in stocks:
+        if max(s.total_quantity - s.doses_taken, 0) <= 0:
+            continue
+        per_day = max(1, min(s.doses_per_day or 1, 4))
+        for t in DOSE_TIMES[per_day]:
+            hour, minute = map(int, t.split(":"))
+            stmt = pg_insert(DoseEvent).values(
+                id=str(uuid.uuid4()),
+                patient_id=patient.id,
+                medicine_name=s.medicine_name,
+                dosage=s.dosage,
+                scheduled_time=today_start.replace(hour=hour, minute=minute),
+                status="pending",
+            ).on_conflict_do_nothing(
+                index_elements=["patient_id", "medicine_name", "scheduled_time"]
+            )
+            await db.execute(stmt)
+
+    await db.commit()
 
     result = await db.execute(
         select(DoseEvent).where(
@@ -101,47 +134,7 @@ async def ensure_todays_doses(patient: Patient, db: AsyncSession) -> list[DoseEv
             DoseEvent.scheduled_time < today_end,
         ).order_by(DoseEvent.scheduled_time)
     )
-    todays = result.scalars().all()
-    if todays:
-        return todays
-
-    lookback_start = today_start - timedelta(days=14)
-    result = await db.execute(
-        select(DoseEvent).where(
-            DoseEvent.patient_id == patient.id,
-            DoseEvent.scheduled_time >= lookback_start,
-            DoseEvent.scheduled_time < today_start,
-        ).order_by(DoseEvent.scheduled_time.desc())
-    )
-    past = result.scalars().all()
-
-    seen = set()
-    new_doses = []
-    for d in past:
-        key = (d.medicine_name, d.dosage, d.scheduled_time.hour, d.scheduled_time.minute)
-        if key in seen:
-            continue
-        seen.add(key)
-
-        scheduled = today_start.replace(hour=d.scheduled_time.hour, minute=d.scheduled_time.minute)
-        new_dose = DoseEvent(
-            id=str(uuid.uuid4()),
-            patient_id=patient.id,
-            medicine_name=d.medicine_name,
-            dosage=d.dosage,
-            scheduled_time=scheduled,
-            status="pending",
-        )
-        db.add(new_dose)
-        new_doses.append(new_dose)
-
-    if new_doses:
-        await db.commit()
-        for nd in new_doses:
-            await db.refresh(nd)
-
-    new_doses.sort(key=lambda d: d.scheduled_time)
-    return new_doses
+    return result.scalars().all()
 
 
 async def send_due_reminders(db: AsyncSession) -> int:
