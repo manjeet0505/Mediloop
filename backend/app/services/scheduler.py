@@ -32,9 +32,11 @@ from app.services.appointment_service import (
     send_appointment_reminders_2h,
     send_pre_visit_briefs,
 )
+from zoneinfo import ZoneInfo
+IST = ZoneInfo("Asia/Kolkata")
 
 logger = logging.getLogger("reminder_scheduler")
-scheduler = AsyncIOScheduler()
+scheduler = AsyncIOScheduler(timezone=IST)
 
 
 async def job_generate_todays_doses():
