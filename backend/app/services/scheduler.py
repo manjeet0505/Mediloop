@@ -183,6 +183,11 @@ def start_scheduler():
         id="pre_visit_briefs",
         replace_existing=True,
     )
+    scheduler.add_job(
+        job_generate_todays_doses,
+        id="startup_dose_generation",
+        replace_existing=True,
+    )
     scheduler.start()
     logger.info("[scheduler] Reminder scheduler started — reminders + escalation are now live")
 
