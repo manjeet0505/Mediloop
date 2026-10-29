@@ -6,6 +6,7 @@ from app.database.connection import get_db
 from app.database.models import User, Patient, DoseEvent, StockLevel
 from app.utils.auth import get_current_user
 from app.services.dose_service import ensure_todays_doses
+from zoneinfo import ZoneInfo
 
 router = APIRouter(prefix="/api/v1/patient", tags=["patient-portal"])
 
@@ -17,13 +18,13 @@ def color_for(name: str) -> str:
     return COLOR_PALETTE[hash(name) % len(COLOR_PALETTE)]
 
 
+IST = ZoneInfo("Asia/Kolkata")
+
 def format_time_12h(dt: datetime) -> str:
-    """Cross-platform 12-hour time format (strftime %-I breaks on Windows)."""
-    hour = dt.hour % 12
-    if hour == 0:
-        hour = 12
-    period = "AM" if dt.hour < 12 else "PM"
-    return f"{hour}:{dt.minute:02d} {period}"
+    local = dt.astimezone(IST)
+    hour = local.hour % 12 or 12
+    period = "AM" if local.hour < 12 else "PM"
+    return f"{hour}:{local.minute:02d} {period}"
 
 
 async def get_linked_patient(current_user: User, db: AsyncSession) -> Patient:
