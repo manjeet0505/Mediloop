@@ -14,12 +14,29 @@ import requests
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from app.database.models import StockLevel
 
-DOSE_TIMES = {
+from zoneinfo import ZoneInfo
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from app.database.models import StockLevel
+
+IST = ZoneInfo("Asia/Kolkata")
+
+DOSE_TIMES_IST = {
     1: ["09:00"],
     2: ["09:00", "21:00"],
     3: ["08:00", "14:00", "20:00"],
     4: ["08:00", "13:00", "18:00", "22:00"],
 }
+
+def ist_today() -> date:
+    return datetime.now(IST).date()
+
+def ist_slot_utc(day: date, hhmm: str) -> datetime:
+    h, m = map(int, hhmm.split(":"))
+    return datetime(day.year, day.month, day.day, h, m, tzinfo=IST).astimezone(timezone.utc)
+
+def ist_day_bounds_utc(day: date) -> tuple[datetime, datetime]:
+    start = datetime(day.year, day.month, day.day, tzinfo=IST).astimezone(timezone.utc)
+    return start, start + timedelta(days=1)
 
 # ── Message templates (console stub for now — swap send_whatsapp_message's
 #    body for the real Meta Business API call later, signature stays same) ──
