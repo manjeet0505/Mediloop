@@ -113,12 +113,11 @@ def send_whatsapp_message(phone: str, message: str) -> bool:
 
 async def ensure_todays_doses(patient: Patient, db: AsyncSession) -> list[DoseEvent]:
     """
-    Makes sure every active medicine (stock row with remaining > 0) has its
-    standard slots for today. Missing slots are inserted; existing ones are
-    left alone. Safe to call from several requests at once.
+    Creates missing IST slots for today for every medicine with stock left.
+    Existing slots are untouched (unique index + ON CONFLICT DO NOTHING).
     """
-    today_start = datetime.combine(date.today(), datetime.min.time(), tzinfo=timezone.utc)
-    today_end = today_start + timedelta(days=1)
+    day = ist_today()
+    day_start, day_end = ist_day_bounds_utc(day)
 
     stocks = (await db.execute(
         select(StockLevel).where(StockLevel.patient_id == patient.id)
@@ -128,30 +127,38 @@ async def ensure_todays_doses(patient: Patient, db: AsyncSession) -> list[DoseEv
         if max(s.total_quantity - s.doses_taken, 0) <= 0:
             continue
         per_day = max(1, min(s.doses_per_day or 1, 4))
-        for t in DOSE_TIMES[per_day]:
-            hour, minute = map(int, t.split(":"))
+        for t in DOSE_TIMES_IST[per_day]:
             stmt = pg_insert(DoseEvent).values(
                 id=str(uuid.uuid4()),
                 patient_id=patient.id,
                 medicine_name=s.medicine_name,
                 dosage=s.dosage,
-                scheduled_time=today_start.replace(hour=hour, minute=minute),
+                scheduled_time=ist_slot_utc(day, t),
                 status="pending",
             ).on_conflict_do_nothing(
                 index_elements=["patient_id", "medicine_name", "scheduled_time"]
             )
             await db.execute(stmt)
-
     await db.commit()
 
     result = await db.execute(
         select(DoseEvent).where(
             DoseEvent.patient_id == patient.id,
-            DoseEvent.scheduled_time >= today_start,
-            DoseEvent.scheduled_time < today_end,
+            DoseEvent.scheduled_time >= day_start,
+            DoseEvent.scheduled_time < day_end,
         ).order_by(DoseEvent.scheduled_time)
     )
     return result.scalars().all()
+
+
+async def generate_todays_doses_for_all(db: AsyncSession) -> int:
+    """Called by the scheduler every day at 00:05 IST and once on startup."""
+    patients = (await db.execute(
+        select(Patient).where(Patient.is_active == True)
+    )).scalars().all()
+    for p in patients:
+        await ensure_todays_doses(p, db)
+    return len(patients)
 
 
 async def send_due_reminders(db: AsyncSession) -> int:
