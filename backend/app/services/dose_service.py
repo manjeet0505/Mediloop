@@ -192,10 +192,9 @@ async def send_due_reminders(db: AsyncSession) -> int:
         lang = patient.language or "en"
         templates = MESSAGES.get(lang, MESSAGES["en"])
         msg = templates["reminder"].format(medicine=dose.medicine_name, dosage=dose.dosage or "")
-        send_whatsapp_message(patient.phone, msg)
-
-        dose.reminder_sent_at = now
-        sent += 1
+        if send_whatsapp_message(patient.phone, msg):
+            dose.reminder_sent_at = now
+            sent += 1
 
     await db.commit()
     return sent
