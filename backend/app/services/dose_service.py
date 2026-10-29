@@ -128,12 +128,15 @@ async def ensure_todays_doses(patient: Patient, db: AsyncSession) -> list[DoseEv
             continue
         per_day = max(1, min(s.doses_per_day or 1, 4))
         for t in DOSE_TIMES_IST[per_day]:
+            slot_utc = ist_slot_utc(day, t)
+            if slot_utc < datetime.now(timezone.utc) - timedelta(hours=2):
+                continue  # past slot: don't create fake 'missed' doses
             stmt = pg_insert(DoseEvent).values(
                 id=str(uuid.uuid4()),
                 patient_id=patient.id,
                 medicine_name=s.medicine_name,
                 dosage=s.dosage,
-                scheduled_time=ist_slot_utc(day, t),
+                scheduled_time=slot_utc,
                 status="pending",
             ).on_conflict_do_nothing(
                 index_elements=["patient_id", "medicine_name", "scheduled_time"]
