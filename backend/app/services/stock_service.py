@@ -76,11 +76,9 @@ async def check_and_send_reorder_alerts(db: AsyncSession) -> int:
             pharmeasy_link=get_pharmeasy_link(stock.medicine_name),
             onemg_link=get_1mg_link(stock.medicine_name),
         )
-        send_whatsapp_message(patient.phone, msg)
-
-        stock.reorder_alert_sent_at = now
-        sent += 1
-
+        if send_whatsapp_message(patient.phone, msg):
+            stock.reorder_alert_sent_at = now
+            sent += 1
     if sent:
         await db.commit()
     return sent
