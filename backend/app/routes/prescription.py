@@ -204,8 +204,9 @@ async def confirm_prescription(
         total_quantity = duration_days * times_per_day
 
         if stock:
-            stock.total_quantity = total_quantity
-            stock.doses_taken = 0
+            # Refill: add the new supply on top of what is left, keep history (doses_taken) intact.
+            remaining_now = max(stock.total_quantity - stock.doses_taken, 0)
+            stock.total_quantity = stock.doses_taken + remaining_now + total_quantity
             stock.doses_per_day = times_per_day
             stock.dosage = med.dosage
             stock.reorder_alert_sent_at = None
