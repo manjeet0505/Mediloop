@@ -17,7 +17,11 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 
 from app.database.models import Patient, DoseEvent, VitalReading, WeeklyReport
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+from app.config import settings
+
+
+def get_openai_client() -> OpenAI:
+    return OpenAI(api_key=settings.OPENAI_API_KEY)
 
 REPORTS_DIR = "reports"
 os.makedirs(REPORTS_DIR, exist_ok=True)
