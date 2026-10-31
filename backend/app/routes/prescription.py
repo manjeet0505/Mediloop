@@ -104,7 +104,12 @@ async def parse_prescription(
 
 
 @router.post("/parse-text")
-async def parse_prescription_text(text: str):
+async def parse_prescription_text(
+    text: str,
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role != "clinic":
+        raise HTTPException(status_code=403, detail="Clinic access only")
     try:
         result = await parse_with_openai(text)
         return {"success": True, "result": result, "llm_used": "openai"}
