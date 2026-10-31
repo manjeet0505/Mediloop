@@ -23,7 +23,7 @@ from app.config import settings
 def get_openai_client() -> OpenAI:
     return OpenAI(api_key=settings.OPENAI_API_KEY)
 
-REPORTS_DIR = "reports"
+REPORTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "reports")
 os.makedirs(REPORTS_DIR, exist_ok=True)
 
 VITAL_LABELS = {
