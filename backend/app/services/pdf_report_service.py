@@ -109,8 +109,9 @@ Vitals:
 {vitals_text}
 """
 
+    client = get_openai_client()
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}],
         max_tokens=150,
         temperature=0.4,
