@@ -254,12 +254,14 @@ async def process_missed_doses_and_escalate(db: AsyncSession) -> int:
             new_level = "emergency"
             if patient.doctor_phone and patient.escalation_level != "emergency":
                 msg = templates["doctor_alert"].format(patient=patient.full_name, count=missed_count)
-                send_whatsapp_message(patient.doctor_phone, msg)
+                if not send_whatsapp_message(patient.doctor_phone, msg):
+                    continue  # keep old level so the alert is retried next run
         elif missed_count >= 3:
             new_level = "family"
             if patient.family_phone and patient.escalation_level not in ("family", "emergency"):
                 msg = templates["family_alert"].format(patient=patient.full_name, count=missed_count)
-                send_whatsapp_message(patient.family_phone, msg)
+                if not send_whatsapp_message(patient.family_phone, msg):
+                    continue  # keep old level so the alert is retried next run
 
         if new_level != patient.escalation_level:
             patient.escalation_level = new_level
