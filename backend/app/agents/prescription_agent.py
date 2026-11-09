@@ -40,16 +40,26 @@ If you cannot read the image at all or it isn't a prescription, return medicatio
 
 
 def check_safety(medications: list) -> tuple[bool, str]:
+    """
+    Compares the DAILY total (dose x times per day) with the daily maximum.
+    Example: Metformin 1000mg x 3 per day = 3000mg/day, which is above a 2000mg/day max.
+    """
     for med in medications:
-        med_lower = med.get("medicine_name", "").lower()
-        for drug, max_dose in SAFETY_CHECKS.items():
-            if drug in med_lower:
-                try:
-                    dose_num = int(''.join(filter(str.isdigit, med.get("dosage", "0"))))
-                    if dose_num > max_dose:
-                        return True, f"Unusual dosage for {med['medicine_name']}: {med['dosage']}. Please verify."
-                except Exception:
-                    pass
+        name = (med.get("medicine_name") or "").lower()
+        for drug, max_mg_per_day in SAFETY_CHECKS.items():
+            if drug not in name:
+                continue
+            digits = "".join(ch for ch in str(med.get("dosage", "")) if ch.isdigit())
+            if not digits:
+                continue  # unreadable dosage: do not guess, the review screen handles it
+            per_dose_mg = int(digits)
+            times = max(1, int(med.get("times_per_day") or 1))
+            daily_mg = per_dose_mg * times
+            if daily_mg > max_mg_per_day:
+                return True, (
+                    f"Unusual daily dose for {med['medicine_name']}: {med['dosage']} x {times}/day "
+                    f"= {daily_mg} mg/day (max {max_mg_per_day} mg/day). Please verify."
+                )
     return False, ""
 
 
