@@ -17,9 +17,9 @@ const NAV = [
   { label: "Analytics", href: "/dashboard/analytics", icon: "ti-chart-bar" },
 ];
 
-// const BOTTOM_NAV = [
-//   { label: "Settings", href: "/dashboard/settings", icon: "ti-settings" },
-// ];
+const BOTTOM_NAV = [
+  { label: "Settings", href: "/dashboard/settings", icon: "ti-settings" },
+];
 
 function ProfileDropdown({ user }: { user: any }) {
   const [open, setOpen] = useState(false);
